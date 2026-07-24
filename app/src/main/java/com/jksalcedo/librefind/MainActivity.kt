@@ -25,6 +25,21 @@ import com.jksalcedo.librefind.ui.auth.AuthViewModel
 import com.jksalcedo.librefind.ui.navigation.NavGraph
 import com.jksalcedo.librefind.ui.navigation.Route
 import com.jksalcedo.librefind.ui.theme.LibreFindTheme
+import com.jksalcedo.librefind.data.local.PreferencesManager
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.jksalcedo.librefind.worker.NotificationWorker
+import com.jksalcedo.librefind.worker.SignerFeedWorker
+import java.util.concurrent.TimeUnit
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.handleDeeplinks
 import org.koin.android.ext.android.inject
@@ -75,6 +90,52 @@ class MainActivity : AppCompatActivity() {
 
                 val showBottomBar =
                     currentRoute == Route.Dashboard.route || currentRoute == Route.Discover.route || currentRoute == Route.Community.route
+
+                val prefs = remember { PreferencesManager(this@MainActivity) }
+                var showConsentDialog by remember { mutableStateOf(!prefs.hasAskedNetworkConsent()) }
+
+                if (showConsentDialog) {
+                    AlertDialog(
+                        onDismissRequest = {
+                            // Force explicit decision
+                        },
+                        title = { Text(stringResource(R.string.network_consent_title)) },
+                        text = { Text(stringResource(R.string.network_consent_message)) },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                prefs.setHasAskedNetworkConsent()
+                                prefs.setNetworkConsentGranted(true)
+                                showConsentDialog = false
+                                
+                                val workManager = WorkManager.getInstance(this@MainActivity)
+                                val constraints = Constraints.Builder()
+                                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                                    .build()
+
+                                val signerRequest = PeriodicWorkRequestBuilder<SignerFeedWorker>(1, TimeUnit.DAYS)
+                                    .setConstraints(constraints)
+                                    .build()
+                                workManager.enqueueUniquePeriodicWork("signer_feed_update", ExistingPeriodicWorkPolicy.UPDATE, signerRequest)
+
+                                val notifRequest = PeriodicWorkRequestBuilder<NotificationWorker>(1, TimeUnit.HOURS)
+                                    .setConstraints(constraints)
+                                    .build()
+                                workManager.enqueueUniquePeriodicWork("notification_check", ExistingPeriodicWorkPolicy.UPDATE, notifRequest)
+                            }) {
+                                Text(stringResource(R.string.network_consent_opt_in))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = {
+                                prefs.setHasAskedNetworkConsent()
+                                prefs.setNetworkConsentGranted(false)
+                                showConsentDialog = false
+                            }) {
+                                Text(stringResource(R.string.network_consent_disable))
+                            }
+                        }
+                    )
+                }
 
                 Scaffold(
                     contentWindowInsets = WindowInsets(0),

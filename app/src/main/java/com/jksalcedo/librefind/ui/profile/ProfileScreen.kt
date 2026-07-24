@@ -12,13 +12,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
@@ -28,6 +31,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,9 +39,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +52,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jksalcedo.librefind.R
 import com.jksalcedo.librefind.domain.model.Submission
 import com.jksalcedo.librefind.domain.model.UserProfile
@@ -74,9 +79,10 @@ fun ProfileScreen(
             TopAppBar(
                 title = {
                     Text(
-                        if (state.isOwnProfile) stringResource(R.string.profile_my_profile) else stringResource(
+                        text = if (state.isOwnProfile) stringResource(R.string.profile_my_profile) else stringResource(
                             R.string.profile_user_profile
-                        )
+                        ),
+                        fontWeight = FontWeight.SemiBold
                     )
                 },
                 navigationIcon = {
@@ -99,7 +105,8 @@ fun ProfileScreen(
                             }
                             DropdownMenu(
                                 expanded = menuExpanded,
-                                onDismissRequest = { menuExpanded = false }
+                                onDismissRequest = { menuExpanded = false },
+                                shape = RoundedCornerShape(16.dp)
                             ) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.profile_sign_out)) },
@@ -108,14 +115,25 @@ fun ProfileScreen(
                                         viewModel.signOut()
                                         onSignOutSuccess()
                                     },
-                                    leadingIcon = { Icon(Icons.Default.ExitToApp, null) }
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.ExitToApp,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
                                 )
                             }
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -126,11 +144,21 @@ fun ProfileScreen(
                 state.isLoading -> FullScreenLoading()
                 state.error != null -> {
                     Column(
-                        modifier = Modifier.align(Alignment.Center),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = 32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(state.error ?: "", color = MaterialTheme.colorScheme.error)
-                        Button(onClick = { viewModel.loadProfile(userId) }) {
+                        Text(
+                            text = state.error ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        Button(
+                            onClick = { viewModel.loadProfile(userId) },
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
                             Text(stringResource(R.string.dashboard_retry))
                         }
                     }
@@ -178,17 +206,25 @@ private fun ProfileContent(
                     R.string.profile_user_submissions
                 ),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 4.dp)
             )
         }
 
         if (submissions.isEmpty()) {
             item {
-                Text(
-                    stringResource(R.string.my_submissions_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh
+                ) {
+                    Text(
+                        text = stringResource(R.string.my_submissions_empty),
+                        modifier = Modifier.padding(24.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         } else {
             items(submissions) { submission ->
@@ -202,11 +238,11 @@ private fun ProfileContent(
 private fun ProfileHeader(profile: UserProfile) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         Surface(
-            modifier = Modifier.size(80.dp),
-            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.size(88.dp),
+            shape = CircleShape,
             color = MaterialTheme.colorScheme.primaryContainer
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -219,7 +255,7 @@ private fun ProfileHeader(profile: UserProfile) {
             }
         }
 
-        Column {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = profile.username,
                 style = MaterialTheme.typography.headlineSmall,
@@ -228,12 +264,13 @@ private fun ProfileHeader(profile: UserProfile) {
             if (!profile.badge.isNullOrBlank()) {
                 Surface(
                     color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = MaterialTheme.shapes.small
+                    shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
                         text = profile.badge,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
@@ -251,39 +288,72 @@ private fun ProfileHeader(profile: UserProfile) {
 private fun ProfileStats(profile: UserProfile) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(vertical = 20.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StatItem(
                 label = stringResource(R.string.submitted),
                 value = profile.submissionCount.toString(),
-                Icons.Default.FileUpload
+                icon = Icons.Default.FileUpload,
+                tint = MaterialTheme.colorScheme.primary
             )
+            StatDivider()
             StatItem(
                 label = stringResource(R.string.approved),
                 value = profile.approvedCount.toString(),
-                Icons.Default.CheckCircle
+                icon = Icons.Default.CheckCircle,
+                tint = MaterialTheme.colorScheme.tertiary
             )
+            StatDivider()
             StatItem(
                 label = stringResource(R.string.rejected),
                 value = profile.rejectedCount.toString(),
-                Icons.Default.Cancel
+                icon = Icons.Default.Cancel,
+                tint = MaterialTheme.colorScheme.error
             )
         }
     }
 }
 
 @Composable
-private fun StatItem(label: String, value: String, icon: ImageVector) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+private fun StatDivider() {
+    HorizontalDivider(
+        modifier = Modifier
+            .height(40.dp)
+            .width(1.dp),
+        color = MaterialTheme.colorScheme.outlineVariant
+    )
+}
+
+@Composable
+private fun StatItem(
+    label: String,
+    value: String,
+    icon: ImageVector,
+    tint: androidx.compose.ui.graphics.Color
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
         Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(label, style = MaterialTheme.typography.labelSmall)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.width(4.dp))
+            Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp), tint = tint)
+
+        }
     }
 }
 
@@ -293,34 +363,41 @@ private fun SubmissionItem(submission: Submission, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = submission.submittedApp.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
+            Row(horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(
+                    modifier = Modifier.weight(1F),
+                    text = submission.submittedApp.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Surface(
+                    color = when (submission.status.name) {
+                        "APPROVED" -> MaterialTheme.colorScheme.primaryContainer
+                        "REJECTED" -> MaterialTheme.colorScheme.errorContainer
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        text = submission.status.name,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
             Text(
                 text = submission.type.name.replace("_", " "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Surface(
-                color = when (submission.status.name) {
-                    "APPROVED" -> MaterialTheme.colorScheme.primaryContainer
-                    "REJECTED" -> MaterialTheme.colorScheme.errorContainer
-                    else -> MaterialTheme.colorScheme.surfaceVariant
-                },
-                shape = MaterialTheme.shapes.extraSmall
-            ) {
-                Text(
-                    text = submission.status.name,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
         }
     }
 }

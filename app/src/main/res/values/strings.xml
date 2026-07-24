@@ -419,6 +419,12 @@
     <string name="signing_key_already_submitted">Already submitted ✓</string>
     <string name="signing_key_filter_label">Key Vote</string>
     <string name="signing_key_empty">No signing key votes yet.</string>
+    <string name="community_sort">Sort Submissions</string>
+    <string name="community_sort_newest">Newest</string>
+    <string name="community_sort_oldest">Oldest</string>
+    <string name="community_sort_most_upvoted">Most Upvoted</string>
+    <string name="community_sort_most_downvoted">Most Downvoted</string>
+
     <string name="submission_details_title">Submission Details</string>
     <string name="dashboard">Dashboard</string>
     <string name="discover">Discover</string>
@@ -577,4 +583,19 @@
     </plurals>
     <string name="items_selected">%1$d selected</string>
     <string name="package_label">Package</string>
+
+    <!-- Network Consent -->
+    <string name="network_consent_title">Allow Background Checks</string>
+    <string name="network_consent_message">LibreFind can automatically check for community notifications and refresh trusted ROM signers in the background. This requires internet access.\n\nDo you wish to opt-in to automatic background network usage?\n\nYou can change this later in Settings.</string>
+    <string name="network_consent_opt_in">Opt-In</string>
+    <string name="network_consent_disable">Disable</string>
+
+    <string name="settings_network_access_title">Background Network Access</string>
+    <string name="settings_network_access_subtitle">Allow LibreFind to check for community notifications and trusted ROM signers in the background</string>
+
+    <string name="settings_auto_update_title">Automatic Updates</string>
+    <string name="settings_auto_update_subtitle">Automatically check for LibreFind updates in the background</string>
+
+    <string name="update_available_title">Update Available</string>
+    <string name="update_available_content">LibreFind version %1$s is available!</string>
 </resources>

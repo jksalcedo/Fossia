@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class AlternativeDetailViewModel(
     private val appRepository: AppRepository,
@@ -79,7 +80,7 @@ class AlternativeDetailViewModel(
         //  cancel previous vote call, wait 600ms before sending
         rateJob?.cancel()
         rateJob = viewModelScope.launch {
-            delay(600)
+            delay(600.milliseconds)
             try {
                 appRepository.castVote(currentAltId, voteType.key, stars).getOrThrow()
                 refreshUserVotes()

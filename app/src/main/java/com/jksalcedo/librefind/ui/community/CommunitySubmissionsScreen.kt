@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Key
@@ -24,10 +25,11 @@ import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.outlined.ThumbDown
 import androidx.compose.material.icons.outlined.ThumbUp
-import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -40,7 +42,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +54,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jksalcedo.librefind.R
 import com.jksalcedo.librefind.domain.model.SigningKeyVote
 import com.jksalcedo.librefind.domain.model.Submission
@@ -72,7 +74,12 @@ fun CommunitySubmissionsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val filteredSubmissions by remember(state.submissions, state.searchQuery, state.filterType, state.isKeyVoteFilter) {
+    val filteredSubmissions by remember(
+        state.submissions,
+        state.searchQuery,
+        state.filterType,
+        state.isKeyVoteFilter
+    ) {
         derivedStateOf {
             if (state.isKeyVoteFilter) return@derivedStateOf emptyList()
             var result = state.submissions
@@ -96,11 +103,20 @@ fun CommunitySubmissionsScreen(
                             )
                 }
             }
-            result
+            when (state.sortOption) {
+                SortOption.NEWEST -> result.sortedByDescending { it.submittedAt }
+                SortOption.OLDEST -> result.sortedBy { it.submittedAt }
+                SortOption.MOST_UPVOTED -> result.sortedByDescending { it.upvotes }
+                SortOption.MOST_DOWNVOTED -> result.sortedByDescending { it.downvotes }
+            }
         }
     }
 
-    val filteredKeyVotes by remember(state.signingKeyVotes, state.searchQuery, state.isKeyVoteFilter) {
+    val filteredKeyVotes by remember(
+        state.signingKeyVotes,
+        state.searchQuery,
+        state.isKeyVoteFilter
+    ) {
         derivedStateOf {
             if (!state.isKeyVoteFilter) return@derivedStateOf emptyList()
             if (state.searchQuery.isBlank()) return@derivedStateOf state.signingKeyVotes
@@ -185,10 +201,59 @@ fun CommunitySubmissionsScreen(
                 title = { Text(stringResource(R.string.community_submissions_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 },
                 actions = {
+                    var sortMenuExpanded by remember { mutableStateOf(false) }
+
+                    Box {
+                        IconButton(onClick = { sortMenuExpanded = true }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Sort,
+                                contentDescription = stringResource(R.string.community_sort),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = sortMenuExpanded,
+                            onDismissRequest = { sortMenuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.community_sort_newest)) },
+                                onClick = {
+                                    viewModel.setSortOption(SortOption.NEWEST)
+                                    sortMenuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.community_sort_oldest)) },
+                                onClick = {
+                                    viewModel.setSortOption(SortOption.OLDEST)
+                                    sortMenuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.community_sort_most_upvoted)) },
+                                onClick = {
+                                    viewModel.setSortOption(SortOption.MOST_UPVOTED)
+                                    sortMenuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.community_sort_most_downvoted)) },
+                                onClick = {
+                                    viewModel.setSortOption(SortOption.MOST_DOWNVOTED)
+                                    sortMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+
                     IconButton(onClick = onLeaderboardClick) {
                         Icon(
                             Icons.Default.EmojiEvents,
@@ -215,7 +280,10 @@ fun CommunitySubmissionsScreen(
                     trailingIcon = {
                         if (state.searchQuery.isNotEmpty()) {
                             IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.community_clear))
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.community_clear)
+                                )
                             }
                         }
                     },
@@ -300,7 +368,12 @@ fun CommunitySubmissionsScreen(
                             if (state.isKeyVoteFilter) {
                                 if (filteredKeyVotes.isEmpty()) {
                                     item {
-                                        Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(32.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
                                             Text(
                                                 text = stringResource(R.string.signing_key_empty),
                                                 style = MaterialTheme.typography.bodyLarge
@@ -312,7 +385,11 @@ fun CommunitySubmissionsScreen(
                                         KeyVoteItem(
                                             vote = vote,
                                             onClick = {
-                                                onKeyVoteClick(vote.packageName, vote.appLabel, vote.sha256Digest)
+                                                onKeyVoteClick(
+                                                    vote.packageName,
+                                                    vote.appLabel,
+                                                    vote.sha256Digest
+                                                )
                                             }
                                         )
                                     }
@@ -320,7 +397,12 @@ fun CommunitySubmissionsScreen(
                             } else {
                                 if (filteredSubmissions.isEmpty()) {
                                     item {
-                                        Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(32.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
                                             Text(
                                                 text = if (state.searchQuery.isEmpty())
                                                     stringResource(R.string.community_submissions_empty)

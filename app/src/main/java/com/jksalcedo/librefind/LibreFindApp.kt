@@ -36,8 +36,38 @@ class LibreFindApp : Application() {
             )
         }
 
-        scheduleSignerFeedUpdate()
-        scheduleNotificationWorker()
+        val prefs = com.jksalcedo.librefind.data.local.PreferencesManager(this)
+        
+        if (prefs.getNetworkConsentGranted()) {
+            scheduleSignerFeedUpdate()
+            scheduleNotificationWorker()
+            
+            if (prefs.getAutoUpdateEnabled()) {
+                scheduleAutoUpdateWorker()
+            } else {
+                WorkManager.getInstance(this).cancelUniqueWork("app_update_check")
+            }
+        } else {
+            WorkManager.getInstance(this).cancelUniqueWork("signer_feed_update")
+            WorkManager.getInstance(this).cancelUniqueWork("notification_check")
+            WorkManager.getInstance(this).cancelUniqueWork("app_update_check")
+        }
+    }
+
+    private fun scheduleAutoUpdateWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val workRequest = PeriodicWorkRequestBuilder<com.jksalcedo.librefind.worker.UpdateCheckWorker>(1, TimeUnit.DAYS)
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "app_update_check",
+            ExistingPeriodicWorkPolicy.UPDATE,
+            workRequest
+        )
     }
 
     private fun scheduleSignerFeedUpdate() {

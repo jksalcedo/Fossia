@@ -2,61 +2,58 @@ package com.jksalcedo.librefind.ui.settings
 
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Feedback
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.PrivacyTip
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.os.LocaleListCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jksalcedo.librefind.R
 import com.jksalcedo.librefind.data.local.PreferencesManager
 import com.jksalcedo.librefind.ui.common.LibreFindLoadingIndicator
@@ -64,7 +61,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
 // ─────────────────────────────────────────────────────────────────────────
-// Reusable Modern Preference Composables
+// Reusable Material You Preference Composables
 // ─────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -76,16 +73,45 @@ fun PreferenceCategory(title: String) {
         fontWeight = FontWeight.Bold,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 8.dp)
+            .padding(start = 20.dp, top = 24.dp, end = 20.dp, bottom = 8.dp)
     )
 }
+
+@Composable
+fun PreferenceGroup(
+    modifier: Modifier = Modifier,
+    outlineColor: Color? = null,
+    content: ColumnScopeContent
+) {
+    val shape = RoundedCornerShape(24.dp)
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .let { base ->
+                if (outlineColor != null) {
+                    base.border(width = 2.dp, color = outlineColor, shape = shape)
+                } else {
+                    base
+                }
+            },
+        shape = shape,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        )
+    ) {
+        Column(content = content)
+    }
+}
+
+private typealias ColumnScopeContent = @Composable (ColumnScope.() -> Unit)
 
 @Composable
 fun PreferenceItem(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    icon: ImageVector? = null,
     onClick: (() -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null
 ) {
@@ -93,22 +119,9 @@ fun PreferenceItem(
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-        } else {
-            // Indent items without icons to align with icon-bearing items
-            Spacer(modifier = Modifier.width(40.dp))
-        }
-
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
@@ -136,16 +149,23 @@ fun PreferenceSwitch(
     title: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    subtitle: String? = null,
-    icon: ImageVector? = null
+    subtitle: String? = null
 ) {
     PreferenceItem(
         title = title,
         subtitle = subtitle,
-        icon = icon,
         onClick = { onCheckedChange(!checked) },
         trailingContent = {
-            Switch(checked = checked, onCheckedChange = onCheckedChange)
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                    uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            )
         }
     )
 }
@@ -157,21 +177,26 @@ fun PreferenceAction(
     onClick: () -> Unit,
     isLoading: Boolean = false,
     subtitle: String? = null,
-    icon: ImageVector? = null,
     isDestructive: Boolean = false
 ) {
     PreferenceItem(
         title = title,
         subtitle = subtitle,
-        icon = icon,
         trailingContent = {
             Button(
                 onClick = onClick,
                 enabled = !isLoading,
+                shape = RoundedCornerShape(16.dp),
                 colors = if (isDestructive) {
-                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
                 } else {
-                    ButtonDefaults.buttonColors()
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
                 }
             ) {
                 if (isLoading) {
@@ -241,7 +266,9 @@ fun SettingsScreen(
         onResetUpdateStatus = { viewModel.resetUpdateStatus() },
         onSetIncludePrereleases = { viewModel.setIncludePrereleases(it) },
         onSetNotificationsEnabled = { viewModel.setNotificationsEnabled(it) },
-        onSetNotificationInterval = { viewModel.setNotificationInterval(it) }
+        onSetNotificationInterval = { viewModel.setNotificationInterval(it) },
+        onSetNetworkConsentGranted = { viewModel.setNetworkConsentGranted(it) },
+        onSetAutoUpdateEnabled = { viewModel.setAutoUpdateEnabled(it) }
     )
 }
 
@@ -276,7 +303,9 @@ fun SettingsContent(
     onResetUpdateStatus: () -> Unit,
     onSetIncludePrereleases: (Boolean) -> Unit,
     onSetNotificationsEnabled: (Boolean) -> Unit,
-    onSetNotificationInterval: (Long) -> Unit
+    onSetNotificationInterval: (Long) -> Unit,
+    onSetNetworkConsentGranted: (Boolean) -> Unit,
+    onSetAutoUpdateEnabled: (Boolean) -> Unit
 ) {
 
     Scaffold(
@@ -285,11 +314,19 @@ fun SettingsContent(
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
     ) { padding ->
         Column(
             modifier = Modifier
@@ -298,180 +335,209 @@ fun SettingsContent(
                 .verticalScroll(rememberScrollState())
         ) {
             // Language Selection
-            LanguageSection()
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            PreferenceCategory(stringResource(R.string.settings_language))
+            PreferenceGroup {
+                LanguageSection()
+            }
+
+            // Background Network Access
+            PreferenceCategory(stringResource(R.string.settings_network_access_title))
+            PreferenceGroup {
+                PreferenceSwitch(
+                    title = stringResource(R.string.settings_network_access_title),
+                    subtitle = stringResource(R.string.settings_network_access_subtitle),
+                    checked = state.networkConsentGranted,
+                    onCheckedChange = onSetNetworkConsentGranted
+                )
+
+                if (state.networkConsentGranted) {
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                    PreferenceSwitch(
+                        title = stringResource(R.string.settings_auto_update_title),
+                        subtitle = stringResource(R.string.settings_auto_update_subtitle),
+                        checked = state.autoUpdateEnabled,
+                        onCheckedChange = onSetAutoUpdateEnabled
+                    )
+                }
+            }
 
             // Appearance & Behavior
             PreferenceCategory(stringResource(R.string.settings_hide_system_packages_title))
             val preferencesManager: PreferencesManager = koinInject()
             var hideSystem by remember { mutableStateOf(preferencesManager.shouldHideSystemPackages()) }
 
-            PreferenceSwitch(
-                title = stringResource(R.string.settings_hide_system_packages_label),
-                checked = hideSystem,
-                onCheckedChange = {
-                    hideSystem = it
-                    preferencesManager.setHideSystemPackages(it)
-                }
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            PreferenceGroup {
+                PreferenceSwitch(
+                    title = stringResource(R.string.settings_hide_system_packages_label),
+                    checked = hideSystem,
+                    onCheckedChange = {
+                        hideSystem = it
+                        preferencesManager.setHideSystemPackages(it)
+                    }
+                )
+            }
 
             // Notifications
             PreferenceCategory(stringResource(R.string.settings_notifications))
-            PreferenceSwitch(
-                title = stringResource(R.string.settings_bg_notifications_title),
-                subtitle = stringResource(R.string.settings_bg_notifications_subtitle),
-                checked = state.notificationsEnabled,
-                onCheckedChange = onSetNotificationsEnabled
-            )
-
-            if (state.notificationsEnabled) {
-                var showIntervalDialog by remember { mutableStateOf(false) }
-                val intervalLabel = when (state.notificationIntervalMins) {
-                    15L -> stringResource(R.string.settings_interval_15min)
-                    60L -> stringResource(R.string.settings_interval_1hour)
-                    360L -> stringResource(R.string.settings_interval_6hours)
-                    1440L -> stringResource(R.string.settings_interval_24hours)
-                    else -> stringResource(R.string.settings_interval_custom, state.notificationIntervalMins)
-                }
-
-                PreferenceItem(
-                    title = stringResource(R.string.settings_check_interval),
-                    subtitle = intervalLabel,
-                    icon = Icons.Default.Refresh,
-                    onClick = { showIntervalDialog = true },
-                    trailingContent = {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+            PreferenceGroup {
+                PreferenceSwitch(
+                    title = stringResource(R.string.settings_bg_notifications_title),
+                    subtitle = stringResource(R.string.settings_bg_notifications_subtitle),
+                    checked = state.notificationsEnabled,
+                    onCheckedChange = onSetNotificationsEnabled
                 )
 
-                if (showIntervalDialog) {
-                    NotificationIntervalDialog(
-                        currentInterval = state.notificationIntervalMins,
-                        onDismiss = { showIntervalDialog = false },
-                        onIntervalSelected = { newInterval ->
-                            showIntervalDialog = false
-                            onSetNotificationInterval(newInterval)
-                        }
+                if (state.notificationsEnabled) {
+                    var showIntervalDialog by remember { mutableStateOf(false) }
+                    val intervalLabel = when (state.notificationIntervalMins) {
+                        15L -> stringResource(R.string.settings_interval_15min)
+                        60L -> stringResource(R.string.settings_interval_1hour)
+                        360L -> stringResource(R.string.settings_interval_6hours)
+                        1440L -> stringResource(R.string.settings_interval_24hours)
+                        else -> stringResource(
+                            R.string.settings_interval_custom,
+                            state.notificationIntervalMins
+                        )
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                    PreferenceItem(
+                        title = stringResource(R.string.settings_check_interval),
+                        subtitle = intervalLabel,
+                        onClick = { showIntervalDialog = true }
                     )
+
+                    if (showIntervalDialog) {
+                        NotificationIntervalDialog(
+                            currentInterval = state.notificationIntervalMins,
+                            onDismiss = { showIntervalDialog = false },
+                            onIntervalSelected = { newInterval ->
+                                showIntervalDialog = false
+                                onSetNotificationInterval(newInterval)
+                            }
+                        )
+                    }
                 }
             }
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
             // Cache Management
             PreferenceCategory(stringResource(R.string.settings_cache_management))
-            PreferenceAction(
-                title = stringResource(R.string.settings_cache_size),
-                subtitle = state.cacheSizeMB,
-                actionLabel = stringResource(R.string.settings_clear),
-                onClick = onClearCacheRequest,
-                isLoading = state.isClearing,
-                isDestructive = true,
-                icon = Icons.Default.Delete
-            )
-            PreferenceAction(
-                title = stringResource(R.string.settings_classification_cache_title),
-                subtitle = stringResource(R.string.settings_classification_cache_subtitle, state.classificationCacheCount),
-                actionLabel = stringResource(R.string.settings_clear),
-                onClick = onClearClassificationRequest,
-                isLoading = state.isClearingClassification,
-                isDestructive = true,
-                icon = Icons.Default.Delete
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            PreferenceGroup {
+                PreferenceAction(
+                    title = stringResource(R.string.settings_cache_size),
+                    subtitle = state.cacheSizeMB,
+                    actionLabel = stringResource(R.string.settings_clear),
+                    onClick = onClearCacheRequest,
+                    isLoading = state.isClearing,
+                    isDestructive = true
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceAction(
+                    title = stringResource(R.string.settings_classification_cache_title),
+                    subtitle = stringResource(
+                        R.string.settings_classification_cache_subtitle,
+                        state.classificationCacheCount
+                    ),
+                    actionLabel = stringResource(R.string.settings_clear),
+                    onClick = onClearClassificationRequest,
+                    isLoading = state.isClearingClassification,
+                    isDestructive = true
+                )
+            }
 
             // Feedback & Community
             PreferenceCategory(stringResource(R.string.settings_feedback))
-            PreferenceItem(
-                title = stringResource(R.string.settings_report_issue),
-                icon = Icons.Default.Feedback,
-                onClick = onReportClick
-            )
-            PreferenceItem(
-                title = stringResource(R.string.settings_my_reports),
-                icon = Icons.Default.History,
-                onClick = onMyReportsClick
-            )
-            PreferenceItem(
-                title = stringResource(R.string.settings_github_issues),
-                icon = Icons.Default.BugReport,
-                onClick = { onOpenUri("https://github.com/jksalcedo/librefind/issues") }
-            )
-            PreferenceItem(
-                title = stringResource(R.string.settings_join_community),
-                icon = Icons.Default.Group,
-                onClick = { onOpenUri("https://t.me/librefind") }
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            PreferenceGroup {
+                PreferenceItem(
+                    title = stringResource(R.string.settings_report_issue),
+                    onClick = onReportClick
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceItem(
+                    title = stringResource(R.string.settings_my_reports),
+                    onClick = onMyReportsClick
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceItem(
+                    title = stringResource(R.string.settings_github_issues),
+                    onClick = { onOpenUri("https://github.com/jksalcedo/librefind/issues") }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceItem(
+                    title = stringResource(R.string.settings_join_community),
+                    onClick = { onOpenUri("https://t.me/librefind") }
+                )
+            }
 
             // Community Moderation
             PreferenceCategory(stringResource(R.string.settings_community_title))
-            PreferenceItem(
-                title = stringResource(R.string.settings_browse_pending_title),
-                subtitle = stringResource(R.string.settings_browse_pending_desc),
-                icon = Icons.Default.Edit,
-                onClick = onCommunityClick
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            PreferenceGroup {
+                PreferenceItem(
+                    title = stringResource(R.string.settings_browse_pending_title),
+                    subtitle = stringResource(R.string.settings_browse_pending_desc),
+                    onClick = onCommunityClick
+                )
+            }
 
             // Help
             PreferenceCategory(stringResource(R.string.settings_help))
-            PreferenceItem(
-                title = stringResource(R.string.settings_reset_tutorial),
-                icon = Icons.Default.Refresh,
-                onClick = onResetTutorial
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            PreferenceGroup {
+                PreferenceItem(
+                    title = stringResource(R.string.settings_reset_tutorial),
+                    onClick = onResetTutorial
+                )
+            }
 
             // About
             PreferenceCategory(stringResource(R.string.settings_about))
-            PreferenceItem(
-                title = stringResource(R.string.settings_version),
-                subtitle = version,
-                icon = Icons.Default.Info
-            )
-            PreferenceItem(
-                title = stringResource(R.string.settings_check_updates),
-                icon = Icons.Default.Refresh,
-                onClick = onCheckForUpdates
-            )
-            PreferenceSwitch(
-                title = stringResource(R.string.settings_include_prereleases_label),
-                subtitle = stringResource(R.string.settings_include_prereleases_desc),
-                checked = state.includePrereleases,
-                onCheckedChange = onSetIncludePrereleases
-            )
-            PreferenceItem(
-                title = stringResource(R.string.settings_view_github),
-                icon = Icons.Default.Info,
-                onClick = { onOpenUri("https://github.com/jksalcedo/librefind") }
-            )
-            PreferenceItem(
-                title = stringResource(R.string.settings_donate),
-                icon = Icons.Default.VolunteerActivism,
-                onClick = { onOpenUri("https://ko-fi.com/jksalcedo") }
-            )
-            PreferenceItem(
-                title = stringResource(R.string.settings_privacy_policy),
-                icon = Icons.Default.PrivacyTip,
-                onClick = onPrivacyPolicyClick
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            PreferenceGroup {
+                PreferenceItem(
+                    title = stringResource(R.string.settings_version),
+                    subtitle = version
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceItem(
+                    title = stringResource(R.string.settings_check_updates),
+                    onClick = onCheckForUpdates
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceSwitch(
+                    title = stringResource(R.string.settings_include_prereleases_label),
+                    subtitle = stringResource(R.string.settings_include_prereleases_desc),
+                    checked = state.includePrereleases,
+                    onCheckedChange = onSetIncludePrereleases
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceItem(
+                    title = stringResource(R.string.settings_view_github),
+                    onClick = { onOpenUri("https://github.com/jksalcedo/librefind") }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceItem(
+                    title = stringResource(R.string.settings_donate),
+                    onClick = { onOpenUri("https://ko-fi.com/jksalcedo") }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceItem(
+                    title = stringResource(R.string.settings_privacy_policy),
+                    onClick = onPrivacyPolicyClick
+                )
+            }
 
             // Account
             if (state.isLoggedIn) {
                 PreferenceCategory(stringResource(R.string.settings_account))
-                PreferenceItem(
-                    title = stringResource(R.string.settings_delete_account),
-                    icon = Icons.Default.Delete,
-                    onClick = onDeleteAccountRequest,
-                    modifier = Modifier.padding(bottom = 32.dp)
-                )
+                PreferenceGroup(
+                    modifier = Modifier.padding(bottom = 32.dp),
+                    outlineColor = MaterialTheme.colorScheme.error
+                ) {
+                    PreferenceItem(
+                        title = stringResource(R.string.settings_delete_account),
+                        onClick = onDeleteAccountRequest
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
@@ -512,7 +578,7 @@ private fun LanguageSection() {
     var showDialog by remember { mutableStateOf(false) }
 
     val currentLocale = remember {
-        androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().getFirstMatch(
+        AppCompatDelegate.getApplicationLocales().getFirstMatch(
             arrayOf("en", "ar", "de", "el", "es", "et", "fr", "it", "pl", "tr", "zh-rCN")
         )?.language ?: ""
     }
@@ -535,16 +601,7 @@ private fun LanguageSection() {
     PreferenceItem(
         title = stringResource(R.string.settings_language),
         subtitle = currentLanguageLabel,
-        icon = Icons.Default.Language,
-        onClick = { showDialog = true },
-        trailingContent = {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
-        }
+        onClick = { showDialog = true }
     )
 
     if (showDialog) {
@@ -554,11 +611,11 @@ private fun LanguageSection() {
             onLanguageSelected = { tag ->
                 showDialog = false
                 val localeList = if (tag.isEmpty()) {
-                    androidx.core.os.LocaleListCompat.getEmptyLocaleList()
+                    LocaleListCompat.getEmptyLocaleList()
                 } else {
-                    androidx.core.os.LocaleListCompat.forLanguageTags(tag)
+                    LocaleListCompat.forLanguageTags(tag)
                 }
-                androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeList)
+                AppCompatDelegate.setApplicationLocales(localeList)
             }
         )
     }
@@ -587,6 +644,7 @@ private fun LanguageSelectionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
         title = { Text(stringResource(R.string.settings_language)) },
         text = {
             Column(
@@ -605,7 +663,7 @@ private fun LanguageSelectionDialog(
                             .padding(vertical = 12.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        androidx.compose.material3.RadioButton(
+                        RadioButton(
                             selected = isSelected,
                             onClick = { onLanguageSelected(tag) }
                         )
@@ -642,6 +700,7 @@ private fun NotificationIntervalDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
         title = { Text(stringResource(R.string.settings_check_interval)) },
         text = {
             Column(
@@ -656,7 +715,7 @@ private fun NotificationIntervalDialog(
                             .padding(vertical = 12.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        androidx.compose.material3.RadioButton(
+                        RadioButton(
                             selected = isSelected,
                             onClick = { onIntervalSelected(mins) }
                         )
@@ -692,6 +751,7 @@ private fun ClearCacheDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
         title = { Text(stringResource(R.string.settings_clear_cache_title)) },
         text = {
             Text(stringResource(R.string.settings_clear_cache_message))
@@ -724,6 +784,7 @@ private fun ClearClassificationCacheDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
         title = { Text(stringResource(R.string.settings_clear_classification_title)) },
         text = { Text(stringResource(R.string.settings_clear_classification_message)) },
         confirmButton = {
@@ -754,6 +815,7 @@ private fun DeleteAccountDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
         title = { Text(stringResource(R.string.settings_delete_account_title)) },
         text = {
             Text(stringResource(R.string.settings_delete_account_message))
@@ -792,6 +854,7 @@ private fun AccountDeletedDialog(
 
     AlertDialog(
         onDismissRequest = { /* Block dismiss — force user to tap OK */ },
+        shape = RoundedCornerShape(28.dp),
         title = { Text(stringResource(R.string.settings_account_deleted_title)) },
         text = { Text(stringResource(R.string.settings_account_deleted_message)) },
         confirmButton = {
@@ -811,6 +874,7 @@ private fun DeleteAccountErrorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
         title = { Text(stringResource(R.string.settings_error)) },
         text = { Text(error) },
         confirmButton = {
@@ -831,6 +895,7 @@ private fun UpdateDialogs(
         UpdateCheckStatus.CHECKING -> {
             AlertDialog(
                 onDismissRequest = { /* Don't dismiss while checking */ },
+                shape = RoundedCornerShape(28.dp),
                 title = { Text(stringResource(R.string.settings_checking_updates)) },
                 text = {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -845,6 +910,7 @@ private fun UpdateDialogs(
             val update = state.latestUpdate ?: return
             AlertDialog(
                 onDismissRequest = onDismiss,
+                shape = RoundedCornerShape(28.dp),
                 title = { Text(stringResource(R.string.settings_update_available_title)) },
                 text = {
                     Column(
@@ -876,7 +942,7 @@ private fun UpdateDialogs(
                     }
                 },
                 confirmButton = {
-                    Button(onClick = onDownload) {
+                    Button(onClick = onDownload, shape = RoundedCornerShape(16.dp)) {
                         Text(stringResource(R.string.settings_download_install))
                     }
                 },
@@ -891,6 +957,7 @@ private fun UpdateDialogs(
         UpdateCheckStatus.UP_TO_DATE -> {
             AlertDialog(
                 onDismissRequest = onDismiss,
+                shape = RoundedCornerShape(28.dp),
                 title = { Text(stringResource(R.string.settings_up_to_date)) },
                 confirmButton = {
                     TextButton(onClick = onDismiss) {
@@ -903,6 +970,7 @@ private fun UpdateDialogs(
         UpdateCheckStatus.ERROR -> {
             AlertDialog(
                 onDismissRequest = onDismiss,
+                shape = RoundedCornerShape(28.dp),
                 title = { Text(stringResource(R.string.settings_error)) },
                 text = {
                     Text(
@@ -953,6 +1021,8 @@ fun SettingsScreenPreview() {
         onResetUpdateStatus = {},
         onSetIncludePrereleases = {},
         onSetNotificationsEnabled = {},
-        onSetNotificationInterval = {}
+        onSetNotificationInterval = {},
+        onSetNetworkConsentGranted = {},
+        onSetAutoUpdateEnabled = {}
     )
 }

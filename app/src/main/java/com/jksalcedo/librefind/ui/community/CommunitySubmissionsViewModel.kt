@@ -12,6 +12,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+enum class SortOption {
+    NEWEST,
+    OLDEST,
+    MOST_UPVOTED,
+    MOST_DOWNVOTED
+}
+
 data class CommunitySubmissionsState(
     val submissions: List<Submission> = emptyList(),
     val signingKeyVotes: List<SigningKeyVote> = emptyList(),
@@ -20,7 +27,8 @@ data class CommunitySubmissionsState(
     val error: String? = null,
     val searchQuery: String = "",
     val filterType: SubmissionType? = null,
-    val isKeyVoteFilter: Boolean = false
+    val isKeyVoteFilter: Boolean = false,
+    val sortOption: SortOption = SortOption.NEWEST
 )
 
 class CommunitySubmissionsViewModel(
@@ -56,7 +64,7 @@ class CommunitySubmissionsViewModel(
                     appRepository.getSigningKeyVotes(forceRefresh)
                 } catch (e: Exception) {
                     _uiState.update { it.copy(error = "Key votes error: ${e.message}") }
-                    emptyList() 
+                    emptyList()
                 }
                 _uiState.update {
                     it.copy(
@@ -68,7 +76,11 @@ class CommunitySubmissionsViewModel(
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(isLoading = false, isRefreshing = false, error = e.message ?: "Failed to load submissions")
+                    it.copy(
+                        isLoading = false,
+                        isRefreshing = false,
+                        error = e.message ?: "Failed to load submissions"
+                    )
                 }
             }
         }
@@ -84,6 +96,10 @@ class CommunitySubmissionsViewModel(
 
     fun setKeyVoteFilter(enabled: Boolean) {
         _uiState.update { it.copy(isKeyVoteFilter = enabled, filterType = null) }
+    }
+
+    fun setSortOption(option: SortOption) {
+        _uiState.update { it.copy(sortOption = option) }
     }
 
     fun approveSubmission(submission: Submission) {

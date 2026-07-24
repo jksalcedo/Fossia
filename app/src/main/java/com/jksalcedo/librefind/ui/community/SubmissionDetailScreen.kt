@@ -1,6 +1,8 @@
 package com.jksalcedo.librefind.ui.community
 
+import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +43,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,10 +51,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jksalcedo.librefind.R
 import com.jksalcedo.librefind.ui.common.LibreFindLoadingIndicator
 import com.jksalcedo.librefind.ui.components.CommentSection
@@ -87,7 +92,10 @@ fun SubmissionDetailScreen(
                 title = { Text(stringResource(R.string.submission_details_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
                     }
                 }
             )
@@ -156,7 +164,10 @@ fun SubmissionDetailScreen(
                         )
                         if (submission.lastEditedBy != null) {
                             Text(
-                                text = stringResource(R.string.submission_detail_edited_by, submission.lastEditedBy),
+                                text = stringResource(
+                                    R.string.submission_detail_edited_by,
+                                    submission.lastEditedBy
+                                ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.padding(start = 4.dp)
@@ -265,7 +276,8 @@ fun SubmissionDetailScreen(
                     DetailItemWithIcon(
                         icon = Icons.Default.Category,
                         label = stringResource(R.string.submission_detail_category),
-                        value = submission.category ?: stringResource(R.string.submission_detail_unknown)
+                        value = submission.category
+                            ?: stringResource(R.string.submission_detail_unknown)
                     )
                     DetailItemWithIcon(
                         icon = Icons.Default.Gavel,
@@ -275,7 +287,8 @@ fun SubmissionDetailScreen(
                     DetailItemWithIcon(
                         icon = Icons.Default.Link,
                         label = stringResource(R.string.submission_detail_repo_url),
-                        value = submission.submittedApp.repoUrl.ifBlank { stringResource(R.string.submission_detail_na) }
+                        value = submission.submittedApp.repoUrl.ifBlank { stringResource(R.string.submission_detail_na) },
+                        isClickable = true
                     )
                     DetailItemWithIcon(
                         icon = Icons.Default.Shop,
@@ -300,7 +313,11 @@ fun SubmissionDetailScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = submission.submittedApp.description.ifBlank { stringResource(R.string.submission_detail_no_description) },
+                                text = submission.submittedApp.description.ifBlank {
+                                    stringResource(
+                                        R.string.submission_detail_no_description
+                                    )
+                                },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -330,9 +347,11 @@ private fun DetailItemWithIcon(
     icon: ImageVector,
     label: String,
     value: String,
-    isMono: Boolean = false
+    isMono: Boolean = false,
+    isClickable: Boolean = false
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
+        val context = LocalContext.current
         Icon(
             imageVector = icon,
             contentDescription = null,
@@ -350,7 +369,14 @@ private fun DetailItemWithIcon(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = if (isMono) FontFamily.Monospace else FontFamily.Default,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                textDecoration = if (isClickable) TextDecoration.Underline else TextDecoration.None,
+                modifier = Modifier.clickable(isClickable) {
+                    if (isClickable) {
+                        val intent = Intent(Intent.ACTION_VIEW, value.toUri())
+                        context.startActivity(intent)
+                    }
+                }
             )
         }
     }
