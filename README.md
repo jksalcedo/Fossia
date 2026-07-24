@@ -124,17 +124,9 @@ roadmap:
 
 ## ☕ Support
 
-LibreFind is a free and open-source project managed independently. Our goal is to promote digital
-privacy by making FOSS apps mainstream. Currently, LibreFind is trusted by **1,735 registered users
-** globally.
+LibreFind is a free, independently managed open-source project.
 
-While the app is free, **infrastructure and hosting servers** cost money to keep running 24/7. If
-you find this tool useful for reclaiming your digital privacy, please consider supporting the
-project. Your contributions go directly toward:
-
-* Paying monthly server bills.
-* Keeping the database fast, responsive, and online.
-* Development of heavy features (like offline sync architecture).
+If you find this tool useful, consider supporting the project to help cover server costs and fund new features!
 
 <div align="center">
   <a href="https://ko-fi.com/jksalcedo">
@@ -146,15 +138,12 @@ project. Your contributions go directly toward:
 
 ## Contributing
 
-Can't donate? You can still make a massive difference to the project's health:
+You can make a massive difference to the project's health by:
 
-* **Star the repo** — Helps others discover LibreFind across GitHub.
-* **Report bugs** — Open an issue if a scanner module or specific sync crashes.
-* **Suggest features** — Share architectural ideas through our issue tracker.
-* **Translate** — Bring digital sovereignty to more regions
-  via [Weblate](https://hosted.weblate.org/engage/librefind/)
-  or [Crowdin](https://crowdin.com/project/librefind).
-* **Contribute code** — Fix bugs or help build our client features via Pull Requests.
+* **Starring the repo**
+* **Reporting bugs & suggesting features** via our issue tracker
+* **Translating** via [Weblate](https://hosted.weblate.org/engage/librefind/) (Trial) or [Crowdin](https://crowdin.com/project/librefind)
+* **Contributing code** via Pull Requests
 
 Every single contribution counts.
 
@@ -163,9 +152,10 @@ Every single contribution counts.
 ## 🌍 Translations
 
 [![Crowdin](https://badges.crowdin.net/librefind/localized.svg)](https://crowdin.com/project/librefind)
+[![Weblate](https://hosted.weblate.org/widgets/librefind/-/svg-badge.svg)](https://hosted.weblate.org/engage/librefind/) *(Trial)*
 
 LibreFind is a global project. If your native language isn't represented, head to
-our [Crowdin Project Page](https://crowdin.com/project/librefind), choose your language, and help
+our [Crowdin Project Page](https://crowdin.com/project/librefind) or [Weblate](https://hosted.weblate.org/engage/librefind/) (currently on trial), choose your language, and help
 make alternative discovery accessible to everyone.
 
 ---
