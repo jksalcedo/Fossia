@@ -3,13 +3,16 @@ package com.jksalcedo.librefind.ui.reports
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -22,21 +25,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jksalcedo.librefind.R
 import com.jksalcedo.librefind.domain.model.Report
-import com.jksalcedo.librefind.domain.model.ReportStatus
+import com.jksalcedo.librefind.ui.common.StatusLabel
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,7 +55,10 @@ fun MyReportsScreen(
                 title = { Text(stringResource(R.string.my_reports_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
                     }
                 }
             )
@@ -140,83 +145,33 @@ fun ReportItem(report: Report) {
 
                 if (!report.adminResponse.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Surface(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier.fillMaxWidth()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Min),
+                        horizontalArrangement = Arrangement.Start
                     ) {
-                        Column(modifier = Modifier.padding(8.dp)) {
+                        VerticalDivider(
+                            modifier = Modifier.fillMaxHeight(),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = stringResource(R.string.my_reports_response),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = report.adminResponse,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         }
                     }
                 }
             }
-            ReportStatusBadge(status = report.status)
+            StatusLabel(status = report.status)
         }
-    }
-}
-
-@Composable
-fun ReportStatusBadge(status: ReportStatus) {
-    val (backgroundColor, contentColor, text) = when (status) {
-        ReportStatus.OPEN -> Triple(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.primary,
-            stringResource(R.string.report_status_open)
-        )
-
-        ReportStatus.IN_PROGRESS -> Triple(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.tertiary,
-            stringResource(R.string.report_status_in_progress)
-        )
-
-        ReportStatus.RESOLVED -> Triple(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.secondary,
-            stringResource(R.string.report_status_resolved)
-        )
-
-        ReportStatus.WONTFIX -> Triple(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.outline,
-            stringResource(R.string.report_status_wontfix)
-        )
-
-        ReportStatus.DUPLICATE -> Triple(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.outline,
-            stringResource(R.string.report_status_duplicate)
-        )
-
-        ReportStatus.CLOSED -> Triple(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.error,
-            stringResource(R.string.report_status_closed)
-        )
-    }
-
-    Surface(
-        color = backgroundColor,
-        shape = MaterialTheme.shapes.small
-    ) {
-        Text(
-            text = text,
-            color = contentColor,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
     }
 }

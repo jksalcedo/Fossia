@@ -4,9 +4,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,7 +33,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +41,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -55,8 +58,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jksalcedo.librefind.R
 import com.jksalcedo.librefind.domain.model.Submission
+import com.jksalcedo.librefind.domain.model.SubmissionStatus
 import com.jksalcedo.librefind.domain.model.UserProfile
 import com.jksalcedo.librefind.ui.common.FullScreenLoading
+import com.jksalcedo.librefind.ui.common.StatusLabel
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -324,10 +329,8 @@ private fun ProfileStats(profile: UserProfile) {
 
 @Composable
 private fun StatDivider() {
-    HorizontalDivider(
-        modifier = Modifier
-            .height(40.dp)
-            .width(1.dp),
+    VerticalDivider(
+        modifier = Modifier.height(40.dp),
         color = MaterialTheme.colorScheme.outlineVariant
     )
 }
@@ -337,7 +340,7 @@ private fun StatItem(
     label: String,
     value: String,
     icon: ImageVector,
-    tint: androidx.compose.ui.graphics.Color
+    tint: Color
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -375,22 +378,7 @@ private fun SubmissionItem(submission: Submission, onClick: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-
-                Surface(
-                    color = when (submission.status.name) {
-                        "APPROVED" -> MaterialTheme.colorScheme.primaryContainer
-                        "REJECTED" -> MaterialTheme.colorScheme.errorContainer
-                        else -> MaterialTheme.colorScheme.surfaceVariant
-                    },
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Text(
-                        text = submission.status.name,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+                StatusLabel(submission.status)
             }
 
             Text(
@@ -398,6 +386,34 @@ private fun SubmissionItem(submission: Submission, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary
             )
+
+            if (submission.status == SubmissionStatus.REJECTED && !submission.rejectionReason.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    VerticalDivider(
+                        modifier = Modifier.fillMaxHeight(),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.my_submissions_rejection_reason),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = submission.rejectionReason,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            }
         }
     }
 }

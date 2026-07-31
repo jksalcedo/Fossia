@@ -58,6 +58,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jksalcedo.librefind.R
 import com.jksalcedo.librefind.domain.model.SigningKeyVote
 import com.jksalcedo.librefind.domain.model.Submission
+import com.jksalcedo.librefind.domain.model.SubmissionStatus
 import com.jksalcedo.librefind.domain.model.SubmissionType
 import com.jksalcedo.librefind.ui.common.FullScreenLoading
 import org.koin.androidx.compose.koinViewModel
@@ -496,6 +497,31 @@ fun CommunitySubmissionItem(
                     }
                 }
             }
+
+            if (submission.status == SubmissionStatus.REJECTED && !submission.rejectionReason.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Text(
+                            text = stringResource(R.string.my_submissions_rejection_reason),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = submission.rejectionReason,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
