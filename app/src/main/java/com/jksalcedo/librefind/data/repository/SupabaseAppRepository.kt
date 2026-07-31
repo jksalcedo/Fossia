@@ -1288,7 +1288,7 @@ class SupabaseAppRepository(
                         "id", "title", "description", "report_type",
                         "status", "priority", "submitter_id",
                         "admin_response", "resolved_at", "created_at",
-                        "profile:profiles!submitter_id(id, username)"
+                        "profile:profiles!user_reports_submitter_id_fkey(id, username)"
                     )
                 ) {
                     filter { eq("submitter_id", userId) }
