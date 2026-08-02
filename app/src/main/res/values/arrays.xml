@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="community_submission_rules">
+        <item>Only submit apps that are genuinely FOSS (Free and Open Source Software) with a verifiable source repository.</item>
+        <item>Do not submit duplicate entries — search first to check if the app already exists.</item>
+        <item>Provide accurate package names. Incorrect package names will be rejected.</item>
+        <item>Include a valid license (e.g. GPL-3.0, MIT, Apache-2.0). Submissions without a license will be rejected.</item>
+        <item>Do not submit proprietary, freemium, or source-available apps as FOSS alternatives.</item>
+        <item>Submissions must be relevant alternatives to the proprietary app listed.</item>
+        <item>Do not spam submissions.</item>
+    </string-array>
+</resources>
