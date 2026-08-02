@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+const val PAGE_SIZE = 50
+
 enum class SortOption {
     NEWEST,
     OLDEST,
@@ -24,6 +26,8 @@ data class CommunitySubmissionsState(
     val signingKeyVotes: List<SigningKeyVote> = emptyList(),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val canLoadMore: Boolean = true,
     val error: String? = null,
     val searchQuery: String = "",
     val filterType: SubmissionType? = null,
@@ -38,40 +42,51 @@ class CommunitySubmissionsViewModel(
     private val _uiState = MutableStateFlow(CommunitySubmissionsState())
     val uiState: StateFlow<CommunitySubmissionsState> = _uiState.asStateFlow()
 
+    private var currentPage = 0
+    private var isPageLoading = false
+
     init {
         loadSubmissions()
     }
 
     fun loadSubmissions(forceRefresh: Boolean = false) {
+        if (isPageLoading) return
         viewModelScope.launch {
+            isPageLoading = true
             if (forceRefresh) {
-                _uiState.update { it.copy(isRefreshing = true, error = null) }
-            } else if (_uiState.value.submissions.isEmpty()) {
+                currentPage = 0
+                _uiState.update {
+                    it.copy(
+                        isRefreshing = true,
+                        error = null,
+                        submissions = emptyList(),
+                        canLoadMore = true
+                    )
+                }
+            } else {
                 _uiState.update { it.copy(isLoading = true, error = null) }
             }
             try {
-                val submissions = appRepository.getAllPendingSubmissions(forceRefresh)
-                val voteCounts = appRepository.getSubmissionVoteCounts(submissions.map { it.id })
-                val enriched = submissions.map { s ->
-                    val agg = voteCounts[s.id]
-                    s.copy(
-                        upvotes = agg?.upvotes ?: s.upvotes,
-                        downvotes = agg?.downvotes ?: s.downvotes,
-                        userVote = agg?.userVote ?: s.userVote
-                    )
-                }
+                val page = appRepository.getPendingSubmissionsPage(
+                    page = 0,
+                    pageSize = PAGE_SIZE,
+                    forceRefresh = forceRefresh
+                )
+                val enriched = enrichWithVotes(page, forceRefresh)
                 val keyVotes = try {
                     appRepository.getSigningKeyVotes(forceRefresh)
                 } catch (e: Exception) {
                     _uiState.update { it.copy(error = "Key votes error: ${e.message}") }
                     emptyList()
                 }
+                currentPage = 1
                 _uiState.update {
                     it.copy(
                         submissions = enriched,
                         signingKeyVotes = keyVotes,
                         isLoading = false,
-                        isRefreshing = false
+                        isRefreshing = false,
+                        canLoadMore = page.isNotEmpty()
                     )
                 }
             } catch (e: Exception) {
@@ -82,7 +97,66 @@ class CommunitySubmissionsViewModel(
                         error = e.message ?: "Failed to load submissions"
                     )
                 }
+            } finally {
+                isPageLoading = false
             }
+        }
+    }
+
+    fun loadNextPage() {
+        if (isPageLoading || !_uiState.value.canLoadMore || _uiState.value.isLoadingMore) return
+        isPageLoading = true
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingMore = true) }
+            try {
+                val page = appRepository.getPendingSubmissionsPage(
+                    page = currentPage,
+                    pageSize = PAGE_SIZE
+                )
+                if (page.isEmpty()) {
+                    _uiState.update { it.copy(isLoadingMore = false, canLoadMore = false) }
+                } else {
+                    val enriched = enrichWithVotes(page)
+                    currentPage++
+                    _uiState.update {
+                        it.copy(
+                            submissions = it.submissions + enriched,
+                            isLoadingMore = false,
+                            canLoadMore = page.isNotEmpty()
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoadingMore = false,
+                        error = e.message ?: "Failed to load more submissions"
+                    )
+                }
+            } finally {
+                isPageLoading = false
+            }
+        }
+    }
+
+    private suspend fun enrichWithVotes(
+        submissions: List<Submission>,
+        forceRefresh: Boolean = false
+    ): List<Submission> {
+        if (submissions.isEmpty()) return emptyList()
+        // Always force-refresh: each page has different IDs so the
+        // cached result from a prior page would miss these entries.
+        val voteCounts = appRepository.getSubmissionVoteCounts(
+            submissions.map { it.id },
+            forceRefresh = true
+        )
+        return submissions.map { s ->
+            val agg = voteCounts[s.id]
+            s.copy(
+                upvotes = agg?.upvotes ?: s.upvotes,
+                downvotes = agg?.downvotes ?: s.downvotes,
+                userVote = agg?.userVote ?: s.userVote
+            )
         }
     }
 
