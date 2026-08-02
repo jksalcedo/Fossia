@@ -388,6 +388,12 @@
     <string name="reject_reason_title">Reject Submission</string>
     <string name="reject_reason_label">Reason for rejection</string>
     <string name="community_suggest_correction">Suggest Correction</string>
+    <string name="community_info_button">About Community Submissions</string>
+    <string name="community_info_title">Community Submissions</string>
+    <string name="community_info_description">This screen shows pending submissions from the LibreFind community. Anyone can submit a new FOSS alternative or flag a proprietary app. Submissions are reviewed by the admins and community through upvotes and downvotes before being added to the database.</string>
+    <string name="community_info_rules_title">Submission Rules</string>
+    <string name="community_info_voting_title">Voting &amp; Auto-Approval</string>
+    <string name="community_info_voting_description">A submission is automatically approved when it reaches a net score of +5 upvotes. Downvoting a submission lets you flag the specific reason (e.g. duplicate, wrong category, fake).</string>
 
     <!-- Submission voting -->
     <string name="submission_upvote">Upvote submission</string>
