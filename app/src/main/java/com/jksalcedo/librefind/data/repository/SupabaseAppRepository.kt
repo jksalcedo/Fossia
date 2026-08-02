@@ -854,6 +854,20 @@ class SupabaseAppRepository(
         }
     }
 
+    override suspend fun getPendingSubmissionsPage(
+        page: Int,
+        pageSize: Int,
+        forceRefresh: Boolean
+    ): List<Submission> {
+        val all = getAllPendingSubmissions(forceRefresh)
+        val from = page * pageSize
+        if (from >= all.size) return emptyList()
+        val to = minOf(from + pageSize, all.size)
+        return all.subList(from, to)
+    }
+
+
+
     private fun mapDtosToSubmissions(
         standardDtos: List<UserSubmissionWithProfileDto>,
         linkingDtos: List<UserLinkingSubmissionWithProfileDto>

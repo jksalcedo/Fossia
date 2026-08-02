@@ -103,6 +103,11 @@ interface AppRepository {
         status: com.jksalcedo.librefind.domain.model.SubmissionStatus? = null
     ): List<Submission>
     suspend fun getAllPendingSubmissions(forceRefresh: Boolean = false): List<Submission>
+    suspend fun getPendingSubmissionsPage(
+        page: Int,
+        pageSize: Int = 50,
+        forceRefresh: Boolean = false
+    ): List<Submission>
 
     suspend fun submitFeedback(
         packageName: String,

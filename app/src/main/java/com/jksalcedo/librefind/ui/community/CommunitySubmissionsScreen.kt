@@ -1,5 +1,12 @@
 package com.jksalcedo.librefind.ui.community
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,6 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ThumbDown
@@ -32,6 +41,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +58,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,10 +67,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,6 +86,7 @@ import com.jksalcedo.librefind.domain.model.Submission
 import com.jksalcedo.librefind.domain.model.SubmissionStatus
 import com.jksalcedo.librefind.domain.model.SubmissionType
 import com.jksalcedo.librefind.ui.common.FullScreenLoading
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -313,6 +333,12 @@ fun CommunitySubmissionsScreen(
             }
         }
     ) { innerPadding ->
+        val listState = rememberLazyListState()
+        val coroutineScope = rememberCoroutineScope()
+        val showScrollToTop by remember {
+            derivedStateOf { listState.firstVisibleItemIndex > 5 }
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -337,8 +363,24 @@ fun CommunitySubmissionsScreen(
                         onRefresh = { viewModel.loadSubmissions(forceRefresh = true) },
                         modifier = Modifier.fillMaxSize()
                     ) {
+                        val shouldLoadMore by remember {
+                            derivedStateOf {
+                                val info = listState.layoutInfo
+                                val total = info.totalItemsCount
+                                val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: 0
+                                total > 0 && lastVisible >= total - 5
+                            }
+                        }
+
+                        LaunchedEffect(shouldLoadMore) {
+                            if (shouldLoadMore) viewModel.loadNextPage()
+                        }
+
                         LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
+                            state = listState,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScrollbar(listState),
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(
                                 start = 16.dp,
                                 top = 8.dp,
@@ -401,7 +443,7 @@ fun CommunitySubmissionsScreen(
                                         }
                                     }
                                 } else {
-                                    items(filteredKeyVotes) { vote ->
+                                    items(filteredKeyVotes, key = { it.sha256Digest + it.packageName }) { vote ->
                                         KeyVoteItem(
                                             vote = vote,
                                             onClick = {
@@ -433,7 +475,7 @@ fun CommunitySubmissionsScreen(
                                         }
                                     }
                                 } else {
-                                    items(filteredSubmissions) { submission ->
+                                    items(filteredSubmissions, key = { it.id }) { submission ->
                                         CommunitySubmissionItem(
                                             submission = submission,
                                             onClick = { onSubmissionClick(submission.id) },
@@ -442,10 +484,46 @@ fun CommunitySubmissionsScreen(
                                             onDownvote = { submissionToDownvote = submission }
                                         )
                                     }
+                                    if (state.isLoadingMore) {
+                                        item {
+                                            Box(
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(16.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = showScrollToTop,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                enter = fadeIn() + slideInVertically { it },
+                exit = fadeOut() + slideOutVertically { it }
+            ) {
+                FloatingActionButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(0)
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
+                    Icon(
+                        Icons.Default.KeyboardArrowUp,
+                        contentDescription = stringResource(R.string.back)
+                    )
                 }
             }
         }
@@ -750,4 +828,48 @@ private fun CommunityInfoDialog(onDismiss: () -> Unit) {
             }
         }
     )
+}
+
+private fun Modifier.verticalScrollbar(
+    state: androidx.compose.foundation.lazy.LazyListState,
+    width: Dp = 4.dp
+): Modifier = composed {
+    val color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+    val targetAlpha = if (state.isScrollInProgress) 1f else 0f
+    val duration = if (state.isScrollInProgress) 150 else 1000
+    val alpha by animateFloatAsState(
+        targetValue = targetAlpha,
+        animationSpec = tween(durationMillis = duration),
+        label = "scrollbar"
+    )
+
+    drawWithContent {
+        drawContent()
+
+        val layoutInfo = state.layoutInfo
+        val viewportSize = layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset
+        val totalItemsCount = layoutInfo.totalItemsCount
+        val visibleItemsCount = layoutInfo.visibleItemsInfo.size
+
+        if (totalItemsCount > visibleItemsCount && alpha > 0f) {
+            val scrollbarHeight = (visibleItemsCount.toFloat() / totalItemsCount * viewportSize)
+                .coerceAtLeast(24.dp.toPx())
+
+            val avgItemSize = viewportSize.toFloat() / visibleItemsCount
+            val currentOffset = state.firstVisibleItemIndex * avgItemSize +
+                    state.firstVisibleItemScrollOffset
+            val estimatedTotalHeight = avgItemSize * totalItemsCount
+            val scrollRatio = currentOffset / (estimatedTotalHeight - viewportSize)
+                .coerceAtLeast(1f)
+            val scrollbarY = scrollRatio * (viewportSize - scrollbarHeight)
+
+            drawRoundRect(
+                color = color,
+                topLeft = Offset(size.width - width.toPx(), scrollbarY.coerceAtLeast(0f)),
+                size = Size(width.toPx(), scrollbarHeight),
+                cornerRadius = CornerRadius(width.toPx() / 2),
+                alpha = alpha
+            )
+        }
+    }
 }
