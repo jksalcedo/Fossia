@@ -881,7 +881,7 @@ class SupabaseAppRepository(
                     license = dto.license ?: ""
                 ),
                 submitterUid = dto.submitterId ?: "",
-                submitterUsername = dto.profile?.username ?: "Unknown",
+                submitterUsername = dto.profile?.username ?: "Deleted User",
                 submitterReputation = dto.profile?.reputationScore ?: 0,
                 submitterBadge = dto.profile?.badge,
                 // Parse created_at timestamp or use current time if missing
@@ -914,7 +914,7 @@ class SupabaseAppRepository(
                     description = "Linking request for ${dto.proprietaryPackage ?: "unknown"}"
                 ),
                 submitterUid = dto.submitterId ?: "",
-                submitterUsername = dto.profile?.username ?: "Unknown",
+                submitterUsername = dto.profile?.username ?: "Deleted User",
                 submitterReputation = dto.profile?.reputationScore ?: 0,
                 submitterBadge = dto.profile?.badge,
                 submittedAt = dto.createdAt?.let { parseTimestamp(it) }
@@ -1316,7 +1316,7 @@ class SupabaseAppRepository(
                         ReportPriority.LOW
                     },
                     submitterUid = dto.submitterId,
-                    submitterUsername = dto.profile?.username ?: "Unknown",
+                    submitterUsername = dto.profile?.username ?: "Deleted User",
                     adminResponse = dto.adminResponse
                 )
             }
