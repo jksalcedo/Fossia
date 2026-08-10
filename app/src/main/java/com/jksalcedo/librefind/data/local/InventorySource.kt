@@ -103,4 +103,12 @@ class InventorySource(
             packageName
         }
     }
+
+    fun getLabelFromInfo(appInfo: android.content.pm.ApplicationInfo): String {
+        return try {
+            context.packageManager.getApplicationLabel(appInfo).toString()
+        } catch (_: Exception) {
+            appInfo.packageName
+        }
+    }
 }

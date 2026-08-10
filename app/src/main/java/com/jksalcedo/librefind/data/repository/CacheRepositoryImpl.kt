@@ -115,4 +115,12 @@ class CacheRepositoryImpl(
             else -> maxOf(t, s)
         }
     }
+
+    override suspend fun getBulkCachedData(): Pair<Map<String, Int>, Set<String>> =
+        withContext(ioDispatcher) {
+            val targets = appCacheDao.getAllTargetsWithCounts()
+                .associate { it.packageName to it.alternativesCount }
+            val solutions = appCacheDao.getAllSolutionPackageNames().toSet()
+            Pair(targets, solutions)
+        }
 }
