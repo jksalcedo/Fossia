@@ -6,13 +6,13 @@
       <GradleProjectSettings>
         <option name="testRunner" value="CHOOSE_PER_TEST" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="gradleHome" value="/usr/share/java/gradle" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
           </set>
         </option>
+        <option name="myGradleHome" value="/usr/share/java/gradle" />
       </GradleProjectSettings>
     </option>
   </component>

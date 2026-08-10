@@ -1,5 +1,5 @@
 [versions]
-agp = "9.1.1"
+agp = "9.3.1"
 coilCompose = "2.7.0"
 koinAndroid = "4.1.1"
 koinAndroidxCompose = "4.1.1"
@@ -36,7 +36,7 @@ coroutines = "1.10.2"
 coroutines-test = "1.10.1"
 
 # KSP (Kotlin Symbol Processing)
-ksp = "2.3.4"
+ksp = "2.3.6"
 foundation = "1.10.4"
 
 # Supabase
