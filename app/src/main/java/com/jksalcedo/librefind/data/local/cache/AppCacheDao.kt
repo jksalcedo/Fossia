@@ -5,6 +5,7 @@ import androidx.room.Query
 import androidx.room.Upsert
 import com.jksalcedo.librefind.data.local.cache.entities.CachedSolution
 import com.jksalcedo.librefind.data.local.cache.entities.CachedTarget
+import com.jksalcedo.librefind.domain.model.TargetWithCount
 
 @Dao
 interface AppCacheDao {
@@ -29,6 +30,12 @@ interface AppCacheDao {
 
     @Query("SELECT * FROM cached_solutions WHERE packageName = :packageName")
     suspend fun getSolution(packageName: String): CachedSolution?
+
+    @Query("SELECT packageName, alternativesCount FROM cached_targets")
+    suspend fun getAllTargetsWithCounts(): List<TargetWithCount>
+
+    @Query("SELECT packageName FROM cached_targets WHERE packageName IN (:packageNames)")
+    suspend fun getMatchingTargetPackageNames(packageNames: List<String>): List<String>
 
     @Query("DELETE FROM cached_targets")
     suspend fun clearTargets()

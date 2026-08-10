@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.jksalcedo.librefind.ui.auth.AuthViewModel
@@ -42,6 +43,8 @@ import com.jksalcedo.librefind.worker.SignerFeedWorker
 import java.util.concurrent.TimeUnit
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.handleDeeplinks
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
 import org.woheller69.freeDroidWarn.FreeDroidWarn
@@ -60,7 +63,13 @@ class MainActivity : AppCompatActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        supabase.handleDeeplinks(intent)
+
+        // Defer Supabase client creation and FreeDroidWarn off the critical path.
+        // The Supabase client triggers Ktor engine init + SharedPreferences session load
+        // which can cost 1–2 seconds on the main thread before the first frame is drawn.
+        lifecycleScope.launch(Dispatchers.IO) {
+            supabase.handleDeeplinks(intent)
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (androidx.core.content.ContextCompat.checkSelfPermission(
@@ -216,11 +225,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
-        supabase.handleDeeplinks(intent)
+        lifecycleScope.launch(Dispatchers.IO) {
+            supabase.handleDeeplinks(intent)
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        supabase.handleDeeplinks(intent)
+        lifecycleScope.launch(Dispatchers.IO) {
+            supabase.handleDeeplinks(intent)
+        }
     }
 }
