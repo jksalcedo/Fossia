@@ -854,6 +854,20 @@ class SupabaseAppRepository(
         }
     }
 
+    override suspend fun getPendingSubmissionsPage(
+        page: Int,
+        pageSize: Int,
+        forceRefresh: Boolean
+    ): List<Submission> {
+        val all = getAllPendingSubmissions(forceRefresh)
+        val from = page * pageSize
+        if (from >= all.size) return emptyList()
+        val to = minOf(from + pageSize, all.size)
+        return all.subList(from, to)
+    }
+
+
+
     private fun mapDtosToSubmissions(
         standardDtos: List<UserSubmissionWithProfileDto>,
         linkingDtos: List<UserLinkingSubmissionWithProfileDto>
@@ -881,7 +895,7 @@ class SupabaseAppRepository(
                     license = dto.license ?: ""
                 ),
                 submitterUid = dto.submitterId ?: "",
-                submitterUsername = dto.profile?.username ?: "Unknown",
+                submitterUsername = dto.profile?.username ?: "Deleted User",
                 submitterReputation = dto.profile?.reputationScore ?: 0,
                 submitterBadge = dto.profile?.badge,
                 // Parse created_at timestamp or use current time if missing
@@ -914,7 +928,7 @@ class SupabaseAppRepository(
                     description = "Linking request for ${dto.proprietaryPackage ?: "unknown"}"
                 ),
                 submitterUid = dto.submitterId ?: "",
-                submitterUsername = dto.profile?.username ?: "Unknown",
+                submitterUsername = dto.profile?.username ?: "Deleted User",
                 submitterReputation = dto.profile?.reputationScore ?: 0,
                 submitterBadge = dto.profile?.badge,
                 submittedAt = dto.createdAt?.let { parseTimestamp(it) }
@@ -1288,7 +1302,7 @@ class SupabaseAppRepository(
                         "id", "title", "description", "report_type",
                         "status", "priority", "submitter_id",
                         "admin_response", "resolved_at", "created_at",
-                        "profile:profiles!submitter_id(id, username)"
+                        "profile:profiles!user_reports_submitter_id_fkey(id, username)"
                     )
                 ) {
                     filter { eq("submitter_id", userId) }
@@ -1316,7 +1330,7 @@ class SupabaseAppRepository(
                         ReportPriority.LOW
                     },
                     submitterUid = dto.submitterId,
-                    submitterUsername = dto.profile?.username ?: "Unknown",
+                    submitterUsername = dto.profile?.username ?: "Deleted User",
                     adminResponse = dto.adminResponse
                 )
             }

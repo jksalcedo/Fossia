@@ -12,7 +12,7 @@ import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -25,17 +25,28 @@ class SupabaseAuthRepository(
 
     private val auth: Auth = supabase.auth
 
-    override val currentUser: Flow<UserProfile?> = auth.sessionStatus.map { status ->
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    override val currentUser: Flow<UserProfile?> = auth.sessionStatus.transformLatest { status ->
         if (status is SessionStatus.Authenticated) {
             status.session.user?.let { user ->
+                val fallbackUsername = extractUsernameFromMetadata(user)
+                emit(
+                    UserProfile(
+                        uid = user.id,
+                        username = fallbackUsername,
+                        email = user.email ?: ""
+                    )
+                )
                 ensureProfileCreated(user)
                 val profile = fetchUserProfile(user.id)
                 if (profile != null && profile.username.isBlank()) {
-                    profile.copy(username = extractUsernameFromMetadata(user))
-                } else profile
+                    emit(profile.copy(username = fallbackUsername))
+                } else if (profile != null) {
+                    emit(profile)
+                }
             }
         } else {
-            null
+            emit(null)
         }
     }
 

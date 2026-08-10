@@ -59,6 +59,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jksalcedo.librefind.domain.model.SubmissionStatus
 import com.jksalcedo.librefind.R
 import com.jksalcedo.librefind.ui.common.LibreFindLoadingIndicator
 import com.jksalcedo.librefind.ui.components.CommentSection
@@ -220,6 +221,32 @@ fun SubmissionDetailScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(stringResource(R.string.submission_detail_edit))
                         }
+                    }
+                }
+            }
+
+            // Admin Rejection Reason / Response Card
+            if (submission.status == SubmissionStatus.REJECTED && !submission.rejectionReason.isNullOrBlank()) {
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = stringResource(R.string.my_submissions_rejection_reason),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = submission.rejectionReason,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
                     }
                 }
             }
