@@ -162,7 +162,7 @@ make alternative discovery accessible to everyone.
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=jksalcedo/librefind&type=date&legend=top-left&theme=dark)](https://www.star-history.com/#jksalcedo/librefind&type=date&legend=top-left&theme=dark)
+[![Star History Chart](https://star-history.dera.page/svg?repos=jksalcedo/librefind&type=date&legend=top-left&theme=dark)](https://star-history.dera.page/#jksalcedo/librefind&type=date&legend=top-left&theme=dark)
 
 ## License
 
