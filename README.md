@@ -117,8 +117,9 @@ at [librefind-submission.web.app](https://librefind-submission.web.app/).
 Connect with fellow open-source advocates, discuss alternative apps, and help shape the project
 roadmap:
 
+* [Matrix Room](https://matrix.to/#/#librefind-community:matrix.org)
 * [Reddit Subreddit](https://www.reddit.com/r/LibreFind)
-* [Telegram Channel](https://t.me/librefind)
+* [Telegram Group](https://t.me/librefind)
 
 ---
 
@@ -166,4 +167,4 @@ make alternative discovery accessible to everyone.
 
 ## License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **GNU General Public License, version 3** - see the [LICENSE](LICENSE) file for details.
