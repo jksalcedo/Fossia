@@ -143,7 +143,7 @@ You can make a massive difference to the project's health by:
 
 * **Starring the repo**
 * **Reporting bugs & suggesting features** via our issue tracker
-* **Translating** via [Weblate](https://hosted.weblate.org/engage/librefind/) (Trial) or [Crowdin](https://crowdin.com/project/librefind)
+* **Translating** via [Weblate](https://hosted.weblate.org/engage/librefind/)
 * **Contributing code** via Pull Requests
 
 Every single contribution counts.
@@ -152,12 +152,14 @@ Every single contribution counts.
 
 ## 🌍 Translations
 
-[![Crowdin](https://badges.crowdin.net/librefind/localized.svg)](https://crowdin.com/project/librefind)
-[![Weblate](https://hosted.weblate.org/widgets/librefind/-/svg-badge.svg)](https://hosted.weblate.org/engage/librefind/) *(Trial)*
+[![Weblate](https://hosted.weblate.org/widgets/librefind/-/svg-badge.svg)](https://hosted.weblate.org/engage/librefind/)
 
 LibreFind is a global project. If your native language isn't represented, head to
-our [Crowdin Project Page](https://crowdin.com/project/librefind) or [Weblate](https://hosted.weblate.org/engage/librefind/) (currently on trial), choose your language, and help
+[Weblate](https://hosted.weblate.org/engage/librefind/), choose your language, and help
 make alternative discovery accessible to everyone.
+
+> [!WARNING]
+> Please do not make translations or edits on Crowdin. We use [Weblate](https://hosted.weblate.org/engage/librefind/) exclusively, and any changes submitted to Crowdin will not be merged.
 
 ---
 
