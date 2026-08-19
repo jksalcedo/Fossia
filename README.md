@@ -148,6 +148,9 @@ You can make a massive difference to the project's health by:
 
 Every single contribution counts.
 
+> [!TIP]
+> If possible, we kindly encourage opening issues and pull requests on our [Codeberg repository](https://codeberg.org/jksalcedo/librefind).
+
 ---
 
 ## 🌍 Translations
