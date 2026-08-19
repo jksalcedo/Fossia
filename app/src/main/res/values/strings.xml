@@ -173,7 +173,8 @@
     <string name="settings_report_issue">Report Issue / Suggestion</string>
     <string name="settings_my_reports">My Reports</string>
     <string name="settings_github_issues">GitHub Issues</string>
-    <string name="settings_join_community">Join Community</string>
+    <string name="settings_join_matrix">Join Matrix</string>
+    <string name="settings_join_telegram">Join Telegram</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
     <string name="settings_view_github">View on GitHub</string>
