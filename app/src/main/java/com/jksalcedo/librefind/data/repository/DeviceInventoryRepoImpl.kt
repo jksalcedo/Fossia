@@ -129,7 +129,20 @@ class DeviceInventoryRepoImpl(
                 appRepository.getPendingSubmissionPackages()
             } catch (_: Exception) { emptySet() }
 
-            if (networkUpdated || pendingPackages.isNotEmpty()) {
+            val unclassifiedPackages = initialResult.filter { it.status == AppStatus.UNKN }.map { it.packageName }
+            val directSolutions = if (unclassifiedPackages.isNotEmpty()) {
+                try {
+                    appRepository.areSolutions(unclassifiedPackages)
+                } catch (_: Exception) { emptySet() }
+            } else emptySet()
+
+            val directProprietary = if (unclassifiedPackages.isNotEmpty()) {
+                try {
+                    appRepository.areProprietary(unclassifiedPackages)
+                } catch (_: Exception) { emptyMap() }
+            } else emptyMap()
+
+            if (networkUpdated || pendingPackages.isNotEmpty() || directSolutions.isNotEmpty() || directProprietary.isNotEmpty()) {
                 val (freshTargets, freshSolutions) = cacheRepository.getBulkCachedData()
                 val updatedResult = coroutineScope {
                     rawApps.map { pkg ->
@@ -140,8 +153,8 @@ class DeviceInventoryRepoImpl(
                                 installer = installerMap[pkg.packageName],
                                 ignoredApps = ignoredAppsList,
                                 reclassifiedApps = reclassifiedAppsMap,
-                                proprietaryMap = emptyMap(),
-                                solutionsSet = emptySet(),
+                                proprietaryMap = directProprietary,
+                                solutionsSet = directSolutions,
                                 pendingPackages = pendingPackages,
                                 platformSigners = platformSigners,
                                 romAppSigners = romAppSigners,
@@ -160,7 +173,20 @@ class DeviceInventoryRepoImpl(
                 appRepository.getPendingSubmissionPackages()
             } catch (_: Exception) { emptySet() }
 
-            if (pendingPackages.isNotEmpty()) {
+            val unclassifiedPackages = initialResult.filter { it.status == AppStatus.UNKN }.map { it.packageName }
+            val directSolutions = if (unclassifiedPackages.isNotEmpty()) {
+                try {
+                    appRepository.areSolutions(unclassifiedPackages)
+                } catch (_: Exception) { emptySet() }
+            } else emptySet()
+
+            val directProprietary = if (unclassifiedPackages.isNotEmpty()) {
+                try {
+                    appRepository.areProprietary(unclassifiedPackages)
+                } catch (_: Exception) { emptyMap() }
+            } else emptyMap()
+
+            if (pendingPackages.isNotEmpty() || directSolutions.isNotEmpty() || directProprietary.isNotEmpty()) {
                 val updatedResult = coroutineScope {
                     rawApps.map { pkg ->
                         async {
@@ -170,8 +196,8 @@ class DeviceInventoryRepoImpl(
                                 installer = installerMap[pkg.packageName],
                                 ignoredApps = ignoredAppsList,
                                 reclassifiedApps = reclassifiedAppsMap,
-                                proprietaryMap = emptyMap(),
-                                solutionsSet = emptySet(),
+                                proprietaryMap = directProprietary,
+                                solutionsSet = directSolutions,
                                 pendingPackages = pendingPackages,
                                 platformSigners = platformSigners,
                                 romAppSigners = romAppSigners,
@@ -326,6 +352,18 @@ class DeviceInventoryRepoImpl(
             )
         }
 
+        if (InstallerHeuristics.isFossInstaller(installer)) {
+            return createAppItem(
+                packageName,
+                label,
+                AppStatus.FOSS,
+                installer,
+                icon,
+                isUserReclassified = false,
+                isSystemPackage = isSystem
+            )
+        }
+
         val isProprietary = try {
             cachedTargetsMap.containsKey(packageName) || cacheRepository.isTargetCached(packageName) || (proprietaryMap[packageName] == true)
         } catch (_: Exception) {
@@ -337,18 +375,6 @@ class DeviceInventoryRepoImpl(
                 packageName,
                 label,
                 AppStatus.PROP,
-                installer,
-                icon,
-                isUserReclassified = false,
-                isSystemPackage = isSystem
-            )
-        }
-
-        if (InstallerHeuristics.isFossInstaller(installer)) {
-            return createAppItem(
-                packageName,
-                label,
-                AppStatus.FOSS,
                 installer,
                 icon,
                 isUserReclassified = false,

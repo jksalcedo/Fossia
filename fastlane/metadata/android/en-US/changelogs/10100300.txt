@@ -6,3 +6,6 @@
 - Minor release improvements
 - Fix Sign In screen flashes when tapping Community before user profile finishes loading
 - Significantly improve app startup time
+- Fix FOSS apps wrongly classified as proprietary or unknown
+- Improve installer and store detection on Android 11+
+- Fix remote solutions cache truncation
