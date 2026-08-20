@@ -77,9 +77,8 @@ class InventorySource(
     fun getInstaller(packageName: String): String? {
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                context.packageManager
-                    .getInstallSourceInfo(packageName)
-                    .installingPackageName
+                val sourceInfo = context.packageManager.getInstallSourceInfo(packageName)
+                sourceInfo.installingPackageName ?: sourceInfo.initiatingPackageName
             } else {
                 @Suppress("DEPRECATION")
                 context.packageManager.getInstallerPackageName(packageName)

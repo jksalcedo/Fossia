@@ -4,6 +4,7 @@ object InstallerHeuristics {
     // Apps installed FROM these are FOSS
     val FOSS_INSTALLERS = setOf(
         "org.fdroid.fdroid",
+        "org.fdroid.fdroid.privileged",
         "com.machiav3lli.fdroid",
         "com.looker.droidify",
         "nya.kitsunyan.foxydroid",
@@ -14,6 +15,7 @@ object InstallerHeuristics {
         "com.nahnah.florid",
         "ie.defo.ech_apps",
         "app.flicky",
+        "dev.imranr.obtainium",
         "dev.imranr.obtainium.fdroid"
     )
 
@@ -24,7 +26,17 @@ object InstallerHeuristics {
         "com.apkpure.aegon",
         "com.tomclaw.appsend",
         "com.indus.appstore",
-        "com.apkupdater"
+        "com.apkupdater",
+        "com.taptap.global",
+        "com.taptap",
+        "com.taptap.intl",
+        "com.sec.android.app.samsungapps",
+        "com.huawei.appmarket",
+        "com.xiaomi.mipicks",
+        "com.oppo.market",
+        "com.heytap.market",
+        "com.vivo.appstore",
+        "com.amazon.venezia"
     )
 
     fun isFossInstaller(installer: String?): Boolean =
