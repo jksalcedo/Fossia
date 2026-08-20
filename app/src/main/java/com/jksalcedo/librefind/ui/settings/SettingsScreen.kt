@@ -464,7 +464,12 @@ fun SettingsContent(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
                 PreferenceItem(
-                    title = stringResource(R.string.settings_join_community),
+                    title = stringResource(R.string.settings_join_matrix),
+                    onClick = { onOpenUri("https://matrix.to/#/#librefind-community:matrix.org") }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceItem(
+                    title = stringResource(R.string.settings_join_telegram),
                     onClick = { onOpenUri("https://t.me/librefind") }
                 )
             }
