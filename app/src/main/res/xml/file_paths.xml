@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <external-cache-path name="update_apk" path="." />
+    <cache-path name="cache" path="." />
+    <external-files-path name="crash_logs" path="crash_logs" />
+    <external-files-path name="logs" path="logs" />
 </paths>
