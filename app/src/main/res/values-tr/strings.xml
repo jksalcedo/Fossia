@@ -266,7 +266,6 @@
     <string name="settings_include_prereleases_desc">Receive updates for alpha, beta, and RC versions.</string>
     <string name="settings_include_prereleases_label">Include pre-releases</string>
     <string name="settings_include_prereleases_title">Experimental Updates</string>
-    <string name="settings_join_community">Topluluğa Katıl</string>
     <string name="settings_language">Dil</string>
     <string name="settings_language_arabic">Arapça</string>
     <string name="settings_language_chinese_simplified">Basitleştirilmiş Çince</string>
