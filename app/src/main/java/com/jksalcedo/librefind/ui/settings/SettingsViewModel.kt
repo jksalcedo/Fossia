@@ -40,8 +40,11 @@ data class SettingsState(
     val isLoggedIn: Boolean = false,
     val notificationsEnabled: Boolean = true,
     val notificationIntervalMins: Long = 60L,
-    val networkConsentGranted: Boolean = false
-)
+    val networkConsentGranted: Boolean = false,
+    val logsLocation: String? = null
+) {
+    val crashLogsLocation: String? get() = logsLocation
+}
 
 class SettingsViewModel(
     private val appContext: android.content.Context,
@@ -97,7 +100,32 @@ class SettingsViewModel(
                 _state.update { it.copy(notificationIntervalMins = interval) }
             }
         }
+        viewModelScope.launch {
+            preferencesManager.observeLogsLocation().collect { location ->
+                _state.update { it.copy(logsLocation = location) }
+            }
+        }
     }
+
+    fun setLogsLocation(uri: String?) {
+        preferencesManager.setLogsLocation(uri)
+    }
+
+    fun setCrashLogsLocation(uri: String?) = setLogsLocation(uri)
+
+    fun exportAppLogs(context: android.content.Context) {
+        com.jksalcedo.librefind.utils.LogExportUtils.shareCurrentAppLog(context, _state.value.logsLocation)
+    }
+
+    fun shareAllLogs(context: android.content.Context) {
+        com.jksalcedo.librefind.utils.LogExportUtils.shareAllLogs(context, _state.value.logsLocation)
+    }
+
+    fun clearLogs(context: android.content.Context) {
+        com.jksalcedo.librefind.utils.LogExportUtils.clearAllLogs(context, _state.value.logsLocation)
+    }
+
+    fun shareCrashLogs(context: android.content.Context) = shareAllLogs(context)
 
     fun setIncludePrereleases(enabled: Boolean) {
         preferencesManager.setIncludePrereleases(enabled)

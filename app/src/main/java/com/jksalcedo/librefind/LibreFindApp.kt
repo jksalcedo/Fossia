@@ -6,6 +6,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.jksalcedo.librefind.data.local.PreferencesManager
 import com.jksalcedo.librefind.di.appModule
 import com.jksalcedo.librefind.di.networkModule
 import com.jksalcedo.librefind.di.repositoryModule
@@ -27,6 +28,16 @@ class LibreFindApp : Application() {
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
+
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        val preferencesManager = PreferencesManager(this)
+        Thread.setDefaultUncaughtExceptionHandler(
+            com.jksalcedo.librefind.utils.LibreFindCrashHandler(
+                context = this,
+                preferencesManager = preferencesManager,
+                defaultHandler = defaultHandler
+            )
+        )
 
         startKoin {
             androidLogger()

@@ -374,11 +374,23 @@ class SupabaseAppRepository(
 
     override suspend fun getProprietaryTargetsWithAlternativesCount(): Map<String, Int> {
         return try {
-            val targets = supabase.postgrest.from("targets")
-                .select(columns = Columns.list("package_name", "alternatives"))
-                .decodeList<TargetWithAlternativesDto>()
+            val allTargets = mutableMapOf<String, Int>()
+            var from = 0L
+            val pageSize = 1000L
+            while (true) {
+                val page = supabase.postgrest.from("targets")
+                    .select(columns = Columns.list("package_name", "alternatives")) {
+                        range(from, from + pageSize - 1)
+                    }
+                    .decodeList<TargetWithAlternativesDto>()
 
-            targets.associate { it.packageName to (it.alternatives?.size ?: 0) }
+                page.forEach {
+                    allTargets[it.packageName] = it.alternatives?.size ?: 0
+                }
+                if (page.size < pageSize) break
+                from += pageSize
+            }
+            allTargets
         } catch (e: Exception) {
             Log.e("SupabaseAppRepo", "Failed to fetch targets with counts", e)
             emptyMap()
@@ -387,10 +399,22 @@ class SupabaseAppRepository(
 
     override suspend fun getAllSolutionPackageNames(): List<String> {
         return try {
-            supabase.postgrest.from("solutions")
-                .select(columns = Columns.list("package_name"))
-                .decodeList<PackageNameDto>()
-                .map { it.packageName }
+            val allPackages = mutableListOf<String>()
+            var from = 0L
+            val pageSize = 1000L
+            while (true) {
+                val page = supabase.postgrest.from("solutions")
+                    .select(columns = Columns.list("package_name")) {
+                        range(from, from + pageSize - 1)
+                    }
+                    .decodeList<PackageNameDto>()
+                    .map { it.packageName }
+
+                allPackages.addAll(page)
+                if (page.size < pageSize) break
+                from += pageSize
+            }
+            allPackages
         } catch (e: Exception) {
             Log.e("SupabaseAppRepo", "Failed to fetch solution package names", e)
             emptyList()

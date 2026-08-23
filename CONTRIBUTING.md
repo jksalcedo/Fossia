@@ -4,6 +4,9 @@ First off, thank you for considering contributing to LibreFind! It's people like
 
 Following these guidelines helps to communicate that you respect the time of the developers managing and developing this open source project. In return, they should reciprocate that respect in addressing your issue, assessing changes, and helping you finalize your pull requests.
 
+> [!TIP]
+> If possible, we kindly encourage opening issues and pull requests on our [Codeberg repository](https://codeberg.org/jksalcedo/librefind).
+
 ## AI Usage Guidelines
 
 With the increasing use of AI coding assistants, we welcome contributions made with the help of AI, but we have strict guidelines to ensure code quality and maintainability:

@@ -173,7 +173,8 @@
     <string name="settings_report_issue">Report Issue / Suggestion</string>
     <string name="settings_my_reports">My Reports</string>
     <string name="settings_github_issues">GitHub Issues</string>
-    <string name="settings_join_community">Join Community</string>
+    <string name="settings_join_matrix">Join Matrix</string>
+    <string name="settings_join_telegram">Join Telegram</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
     <string name="settings_view_github">View on GitHub</string>
@@ -604,4 +605,18 @@
 
     <string name="update_available_title">Update Available</string>
     <string name="update_available_content">LibreFind version %1$s is available!</string>
+
+    <!-- Logs & Diagnostics -->
+    <string name="settings_logs_title">Logs &amp; Diagnostics</string>
+    <string name="pref_logs_location_title">Logs Location</string>
+    <string name="pref_logs_location_default">Default: Internal App Storage</string>
+    <string name="pref_export_app_logs_title">Export App Logs</string>
+    <string name="pref_export_app_logs_summary">Capture current device diagnostics and runtime logs</string>
+    <string name="pref_share_all_logs_title">Share All Logs</string>
+    <string name="pref_share_all_logs_summary">Share crash reports and diagnostic logs as a zip file</string>
+    <string name="logs_none_found">No logs found</string>
+    <string name="logs_zip_failed">Failed to create zip file</string>
+    <string name="logs_reset_default">Reset location</string>
+    <string name="pref_clear_logs_title">Clear Logs</string>
+    <string name="logs_cleared">Local logs cleared</string>
 </resources>

@@ -1,7 +1,10 @@
 package com.jksalcedo.librefind.ui.settings
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -52,7 +55,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jksalcedo.librefind.R
 import com.jksalcedo.librefind.data.local.PreferencesManager
@@ -240,6 +245,21 @@ fun SettingsScreen(
         packageInfo.versionName ?: "Unknown"
     }
 
+    val logFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            } catch (_: Exception) {
+            }
+            viewModel.setLogsLocation(uri.toString())
+        }
+    }
+
     SettingsContent(
         state = state,
         version = version,
@@ -268,7 +288,12 @@ fun SettingsScreen(
         onSetNotificationsEnabled = { viewModel.setNotificationsEnabled(it) },
         onSetNotificationInterval = { viewModel.setNotificationInterval(it) },
         onSetNetworkConsentGranted = { viewModel.setNetworkConsentGranted(it) },
-        onSetAutoUpdateEnabled = { viewModel.setAutoUpdateEnabled(it) }
+        onSetAutoUpdateEnabled = { viewModel.setAutoUpdateEnabled(it) },
+        onSelectLogsLocation = { logFolderLauncher.launch(null) },
+        onResetLogsLocation = { viewModel.setLogsLocation(null) },
+        onExportAppLogs = { viewModel.exportAppLogs(context) },
+        onShareAllLogs = { viewModel.shareAllLogs(context) },
+        onClearLogs = { viewModel.clearLogs(context) }
     )
 }
 
@@ -305,7 +330,13 @@ fun SettingsContent(
     onSetNotificationsEnabled: (Boolean) -> Unit,
     onSetNotificationInterval: (Long) -> Unit,
     onSetNetworkConsentGranted: (Boolean) -> Unit,
-    onSetAutoUpdateEnabled: (Boolean) -> Unit
+    onSetAutoUpdateEnabled: (Boolean) -> Unit,
+    // Logs & Diagnostics Actions
+    onSelectLogsLocation: () -> Unit,
+    onResetLogsLocation: () -> Unit,
+    onExportAppLogs: () -> Unit,
+    onShareAllLogs: () -> Unit,
+    onClearLogs: () -> Unit
 ) {
 
     Scaffold(
@@ -445,6 +476,53 @@ fun SettingsContent(
                 )
             }
 
+            // Logs & Diagnostics
+            PreferenceCategory(stringResource(R.string.settings_logs_title))
+            PreferenceGroup {
+                val context = LocalContext.current
+                val logsLocationSummary = if (state.logsLocation != null) {
+                    val uri = state.logsLocation.toUri()
+                    val docFile = DocumentFile.fromTreeUri(context, uri)
+                    docFile?.name ?: uri.lastPathSegment
+                    ?: stringResource(R.string.pref_logs_location_default)
+                } else {
+                    stringResource(R.string.pref_logs_location_default)
+                }
+
+                PreferenceItem(
+                    title = stringResource(R.string.pref_logs_location_title),
+                    subtitle = logsLocationSummary,
+                    onClick = onSelectLogsLocation
+                )
+                if (state.logsLocation != null) {
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                    PreferenceAction(
+                        title = stringResource(R.string.logs_reset_default),
+                        actionLabel = stringResource(R.string.settings_clear),
+                        onClick = onResetLogsLocation
+                    )
+                }
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceItem(
+                    title = stringResource(R.string.pref_export_app_logs_title),
+                    subtitle = stringResource(R.string.pref_export_app_logs_summary),
+                    onClick = onExportAppLogs
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceItem(
+                    title = stringResource(R.string.pref_share_all_logs_title),
+                    subtitle = stringResource(R.string.pref_share_all_logs_summary),
+                    onClick = onShareAllLogs
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceAction(
+                    title = stringResource(R.string.pref_clear_logs_title),
+                    actionLabel = stringResource(R.string.settings_clear),
+                    onClick = onClearLogs,
+                    isDestructive = true
+                )
+            }
+
             // Feedback & Community
             PreferenceCategory(stringResource(R.string.settings_feedback))
             PreferenceGroup {
@@ -464,7 +542,12 @@ fun SettingsContent(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
                 PreferenceItem(
-                    title = stringResource(R.string.settings_join_community),
+                    title = stringResource(R.string.settings_join_matrix),
+                    onClick = { onOpenUri("https://matrix.to/#/#librefind-community:matrix.org") }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                PreferenceItem(
+                    title = stringResource(R.string.settings_join_telegram),
                     onClick = { onOpenUri("https://t.me/librefind") }
                 )
             }
@@ -1023,6 +1106,11 @@ fun SettingsScreenPreview() {
         onSetNotificationsEnabled = {},
         onSetNotificationInterval = {},
         onSetNetworkConsentGranted = {},
-        onSetAutoUpdateEnabled = {}
+        onSetAutoUpdateEnabled = {},
+        onSelectLogsLocation = {},
+        onResetLogsLocation = {},
+        onExportAppLogs = {},
+        onShareAllLogs = {},
+        onClearLogs = {}
     )
 }
