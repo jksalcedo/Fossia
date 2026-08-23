@@ -266,7 +266,6 @@
     <string name="settings_include_prereleases_desc">Erhalte Updates für Alpha-, Beta- und RC-Versionen.</string>
     <string name="settings_include_prereleases_label">Vorveröffentlichungen einschließen</string>
     <string name="settings_include_prereleases_title">Experimentelle Updates</string>
-    <string name="settings_join_community">Tritt der Community bei</string>
     <string name="settings_language">Sprache</string>
     <string name="settings_language_arabic">Arabisch</string>
     <string name="settings_language_chinese_simplified">Vereinfachtes Chinesisch</string>
