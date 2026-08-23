@@ -79,12 +79,12 @@ tasks.register("updateVersionProperties") {
 
 configure<ApplicationExtension> {
     namespace = "com.jksalcedo.librefind"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.jksalcedo.librefind"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = computedVersionCode
         versionName = computedVersionName
 
@@ -117,6 +117,9 @@ configure<ApplicationExtension> {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
+            applicationIdSuffix = ".debug"
         }
     }
 
@@ -160,6 +163,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.documentfile)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)

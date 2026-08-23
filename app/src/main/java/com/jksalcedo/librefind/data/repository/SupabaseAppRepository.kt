@@ -374,11 +374,23 @@ class SupabaseAppRepository(
 
     override suspend fun getProprietaryTargetsWithAlternativesCount(): Map<String, Int> {
         return try {
-            val targets = supabase.postgrest.from("targets")
-                .select(columns = Columns.list("package_name", "alternatives"))
-                .decodeList<TargetWithAlternativesDto>()
+            val allTargets = mutableMapOf<String, Int>()
+            var from = 0L
+            val pageSize = 1000L
+            while (true) {
+                val page = supabase.postgrest.from("targets")
+                    .select(columns = Columns.list("package_name", "alternatives")) {
+                        range(from, from + pageSize - 1)
+                    }
+                    .decodeList<TargetWithAlternativesDto>()
 
-            targets.associate { it.packageName to (it.alternatives?.size ?: 0) }
+                page.forEach {
+                    allTargets[it.packageName] = it.alternatives?.size ?: 0
+                }
+                if (page.size < pageSize) break
+                from += pageSize
+            }
+            allTargets
         } catch (e: Exception) {
             Log.e("SupabaseAppRepo", "Failed to fetch targets with counts", e)
             emptyMap()
@@ -387,10 +399,22 @@ class SupabaseAppRepository(
 
     override suspend fun getAllSolutionPackageNames(): List<String> {
         return try {
-            supabase.postgrest.from("solutions")
-                .select(columns = Columns.list("package_name"))
-                .decodeList<PackageNameDto>()
-                .map { it.packageName }
+            val allPackages = mutableListOf<String>()
+            var from = 0L
+            val pageSize = 1000L
+            while (true) {
+                val page = supabase.postgrest.from("solutions")
+                    .select(columns = Columns.list("package_name")) {
+                        range(from, from + pageSize - 1)
+                    }
+                    .decodeList<PackageNameDto>()
+                    .map { it.packageName }
+
+                allPackages.addAll(page)
+                if (page.size < pageSize) break
+                from += pageSize
+            }
+            allPackages
         } catch (e: Exception) {
             Log.e("SupabaseAppRepo", "Failed to fetch solution package names", e)
             emptyList()
@@ -854,6 +878,20 @@ class SupabaseAppRepository(
         }
     }
 
+    override suspend fun getPendingSubmissionsPage(
+        page: Int,
+        pageSize: Int,
+        forceRefresh: Boolean
+    ): List<Submission> {
+        val all = getAllPendingSubmissions(forceRefresh)
+        val from = page * pageSize
+        if (from >= all.size) return emptyList()
+        val to = minOf(from + pageSize, all.size)
+        return all.subList(from, to)
+    }
+
+
+
     private fun mapDtosToSubmissions(
         standardDtos: List<UserSubmissionWithProfileDto>,
         linkingDtos: List<UserLinkingSubmissionWithProfileDto>
@@ -881,7 +919,7 @@ class SupabaseAppRepository(
                     license = dto.license ?: ""
                 ),
                 submitterUid = dto.submitterId ?: "",
-                submitterUsername = dto.profile?.username ?: "Unknown",
+                submitterUsername = dto.profile?.username ?: "Deleted User",
                 submitterReputation = dto.profile?.reputationScore ?: 0,
                 submitterBadge = dto.profile?.badge,
                 // Parse created_at timestamp or use current time if missing
@@ -914,7 +952,7 @@ class SupabaseAppRepository(
                     description = "Linking request for ${dto.proprietaryPackage ?: "unknown"}"
                 ),
                 submitterUid = dto.submitterId ?: "",
-                submitterUsername = dto.profile?.username ?: "Unknown",
+                submitterUsername = dto.profile?.username ?: "Deleted User",
                 submitterReputation = dto.profile?.reputationScore ?: 0,
                 submitterBadge = dto.profile?.badge,
                 submittedAt = dto.createdAt?.let { parseTimestamp(it) }
@@ -1288,7 +1326,7 @@ class SupabaseAppRepository(
                         "id", "title", "description", "report_type",
                         "status", "priority", "submitter_id",
                         "admin_response", "resolved_at", "created_at",
-                        "profile:profiles!submitter_id(id, username)"
+                        "profile:profiles!user_reports_submitter_id_fkey(id, username)"
                     )
                 ) {
                     filter { eq("submitter_id", userId) }
@@ -1316,7 +1354,7 @@ class SupabaseAppRepository(
                         ReportPriority.LOW
                     },
                     submitterUid = dto.submitterId,
-                    submitterUsername = dto.profile?.username ?: "Unknown",
+                    submitterUsername = dto.profile?.username ?: "Deleted User",
                     adminResponse = dto.adminResponse
                 )
             }

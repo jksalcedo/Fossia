@@ -1,6 +1,8 @@
 package com.jksalcedo.librefind.ui.mysubmissions
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
@@ -176,36 +181,52 @@ fun SubmissionItem(
 
 @Composable
 fun StatusBadge(status: SubmissionStatus) {
-    val (backgroundColor, contentColor, text) = when (status) {
-        SubmissionStatus.PENDING -> Triple(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.tertiary,
-            stringResource(R.string.status_pending)
-        )
+    val isDark = isSystemInDarkTheme()
+    val (backgroundColor, contentColor, dotColor) = when (status) {
+        SubmissionStatus.APPROVED -> if (isDark) {
+            Triple(Color(0xFF1E3A29), Color(0xFF81C784), Color(0xFF66BB6A))
+        } else {
+            Triple(Color(0xFFE8F5E9), Color(0xFF1B5E20), Color(0xFF2E7D32))
+        }
+        SubmissionStatus.PENDING -> if (isDark) {
+            Triple(Color(0xFF3E2723), Color(0xFFFFB74D), Color(0xFFFFA726))
+        } else {
+            Triple(Color(0xFFFFF3E0), Color(0xFFE65100), Color(0xFFEF6C00))
+        }
+        SubmissionStatus.REJECTED -> if (isDark) {
+            Triple(Color(0xFF3C1E1E), Color(0xFFEF5350), Color(0xFFE53935))
+        } else {
+            Triple(Color(0xFFFFEBEE), Color(0xFFC62828), Color(0xFFD32F2F))
+        }
+    }
 
-        SubmissionStatus.APPROVED -> Triple(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.primary,
-            stringResource(R.string.status_approved)
-        )
-
-        SubmissionStatus.REJECTED -> Triple(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.error,
-            stringResource(R.string.status_rejected)
-        )
+    val text = when (status) {
+        SubmissionStatus.PENDING -> stringResource(R.string.status_pending)
+        SubmissionStatus.APPROVED -> stringResource(R.string.status_approved)
+        SubmissionStatus.REJECTED -> stringResource(R.string.status_rejected)
     }
 
     Surface(
         color = backgroundColor,
-        shape = MaterialTheme.shapes.small,
+        shape = CircleShape,
     ) {
-        Text(
-            text = text,
-            color = contentColor,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(dotColor)
+            )
+            Text(
+                text = text,
+                color = contentColor,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }

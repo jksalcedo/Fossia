@@ -68,68 +68,156 @@ class DeviceInventoryRepoImpl(
         val romPrefixes = trustedRomSignerDb.romPrefixes.first()
 
         val cacheFresh = cacheRepository.isCacheValid()
-        var isOfflineOrStaleMode = false
+        val hasCache = cacheRepository.hasAnyCache()
 
-        if (!cacheFresh) {
-            try {
-                cacheRepository.refreshCache()
-            } catch (e: Exception) {
-                val hasCache = cacheRepository.hasAnyCache()
-                if (hasCache) {
-                    isOfflineOrStaleMode = true
-                    Log.w(TAG, "Offline/stale mode: using existing cache", e)
-                } else {
-                    Log.w(TAG, "No cache available; continuing with limited classification", e)
+        // Bulk-load labels from already-fetched ApplicationInfo and installers in parallel.
+        // Labels use PackageManager.getApplicationLabel() which is fast (in-memory),
+        // but installers need getInstallSourceInfo() which can be slow - parallelizing avoids serial wait.
+        val (labelMap, installerMap) = coroutineScope {
+            val labels = async {
+                rawApps.associate { pkg ->
+                    pkg.packageName to (pkg.applicationInfo
+                        ?.let { ai -> localSource.getLabelFromInfo(ai) }
+                        ?: pkg.packageName)
                 }
             }
+            val installers = async {
+                rawApps.associate { pkg -> pkg.packageName to localSource.getInstaller(pkg.packageName) }
+            }
+            Pair(labels.await(), installers.await())
         }
 
-        val packageNames = rawApps.map { it.packageName }
+        // Single bulk DB read: all cached targets + solutions in 2 queries total
+        val (cachedTargetsMap, cachedSolutionsSet) = cacheRepository.getBulkCachedData()
 
-        // Bulk lookups
-        val proprietaryMap = try {
-            appRepository.areProprietary(packageNames)
-        } catch (_: Exception) {
-            emptyMap()
-        }
-
-        val solutionsSet = try {
-            appRepository.areSolutions(packageNames)
-        } catch (_: Exception) {
-            emptySet()
-        }
-
-        val pendingPackages = try {
-            appRepository.getPendingSubmissionPackages()
-        } catch (_: Exception) {
-            emptySet()
-        }
-
-        val classifiedApps = coroutineScope {
+        // Emit initial result immediately using local cache only
+        val initialResult = coroutineScope {
             rawApps.map { pkg ->
                 async {
                     classifyApp(
                         pkg = pkg,
+                        label = labelMap[pkg.packageName] ?: pkg.packageName,
+                        installer = installerMap[pkg.packageName],
                         ignoredApps = ignoredAppsList,
                         reclassifiedApps = reclassifiedAppsMap,
-                        proprietaryMap = proprietaryMap,
-                        solutionsSet = solutionsSet,
-                        pendingPackages = pendingPackages,
+                        proprietaryMap = emptyMap(),
+                        solutionsSet = emptySet(),
+                        pendingPackages = emptySet(),
                         platformSigners = platformSigners,
                         romAppSigners = romAppSigners,
                         romPrefixes = romPrefixes,
-                        isOfflineOrStaleMode = isOfflineOrStaleMode
+                        isOfflineOrStaleMode = !cacheFresh && !hasCache,
+                        cachedTargetsMap = cachedTargetsMap,
+                        cachedSolutionsSet = cachedSolutionsSet
                     )
                 }
             }.awaitAll()
         }
+        emit(initialResult.sortedBy { it.status.sortWeight })
 
-        val sorted = classifiedApps.sortedBy { it.status.sortWeight }
-        emit(sorted)
+        // Refresh cache in background, then re-emit with updated data
+        if (!cacheFresh) {
+            var networkUpdated = false
+            try {
+                cacheRepository.refreshCache()
+                networkUpdated = true
+            } catch (e: Exception) {
+                Log.w(TAG, "Background cache refresh failed", e)
+            }
+
+            val pendingPackages = try {
+                appRepository.getPendingSubmissionPackages()
+            } catch (_: Exception) { emptySet() }
+
+            val unclassifiedPackages = initialResult.filter { it.status == AppStatus.UNKN }.map { it.packageName }
+            val directSolutions = if (unclassifiedPackages.isNotEmpty()) {
+                try {
+                    appRepository.areSolutions(unclassifiedPackages)
+                } catch (_: Exception) { emptySet() }
+            } else emptySet()
+
+            val directProprietary = if (unclassifiedPackages.isNotEmpty()) {
+                try {
+                    appRepository.areProprietary(unclassifiedPackages)
+                } catch (_: Exception) { emptyMap() }
+            } else emptyMap()
+
+            if (networkUpdated || pendingPackages.isNotEmpty() || directSolutions.isNotEmpty() || directProprietary.isNotEmpty()) {
+                val (freshTargets, freshSolutions) = cacheRepository.getBulkCachedData()
+                val updatedResult = coroutineScope {
+                    rawApps.map { pkg ->
+                        async {
+                            classifyApp(
+                                pkg = pkg,
+                                label = labelMap[pkg.packageName] ?: pkg.packageName,
+                                installer = installerMap[pkg.packageName],
+                                ignoredApps = ignoredAppsList,
+                                reclassifiedApps = reclassifiedAppsMap,
+                                proprietaryMap = directProprietary,
+                                solutionsSet = directSolutions,
+                                pendingPackages = pendingPackages,
+                                platformSigners = platformSigners,
+                                romAppSigners = romAppSigners,
+                                romPrefixes = romPrefixes,
+                                isOfflineOrStaleMode = false,
+                                cachedTargetsMap = freshTargets,
+                                cachedSolutionsSet = freshSolutions
+                            )
+                        }
+                    }.awaitAll()
+                }
+                emit(updatedResult.sortedBy { it.status.sortWeight })
+            }
+        } else {
+            val pendingPackages = try {
+                appRepository.getPendingSubmissionPackages()
+            } catch (_: Exception) { emptySet() }
+
+            val unclassifiedPackages = initialResult.filter { it.status == AppStatus.UNKN }.map { it.packageName }
+            val directSolutions = if (unclassifiedPackages.isNotEmpty()) {
+                try {
+                    appRepository.areSolutions(unclassifiedPackages)
+                } catch (_: Exception) { emptySet() }
+            } else emptySet()
+
+            val directProprietary = if (unclassifiedPackages.isNotEmpty()) {
+                try {
+                    appRepository.areProprietary(unclassifiedPackages)
+                } catch (_: Exception) { emptyMap() }
+            } else emptyMap()
+
+            if (pendingPackages.isNotEmpty() || directSolutions.isNotEmpty() || directProprietary.isNotEmpty()) {
+                val updatedResult = coroutineScope {
+                    rawApps.map { pkg ->
+                        async {
+                            classifyApp(
+                                pkg = pkg,
+                                label = labelMap[pkg.packageName] ?: pkg.packageName,
+                                installer = installerMap[pkg.packageName],
+                                ignoredApps = ignoredAppsList,
+                                reclassifiedApps = reclassifiedAppsMap,
+                                proprietaryMap = directProprietary,
+                                solutionsSet = directSolutions,
+                                pendingPackages = pendingPackages,
+                                platformSigners = platformSigners,
+                                romAppSigners = romAppSigners,
+                                romPrefixes = romPrefixes,
+                                isOfflineOrStaleMode = false,
+                                cachedTargetsMap = cachedTargetsMap,
+                                cachedSolutionsSet = cachedSolutionsSet
+                            )
+                        }
+                    }.awaitAll()
+                }
+                emit(updatedResult.sortedBy { it.status.sortWeight })
+            }
+        }
     }.flowOn(Dispatchers.IO)
 
     private suspend fun classifyApp(
         pkg: PackageInfo,
+        label: String,
+        installer: String?,
         ignoredApps: List<String>,
         reclassifiedApps: Map<String, AppStatus>,
         proprietaryMap: Map<String, Boolean>,
@@ -138,11 +226,11 @@ class DeviceInventoryRepoImpl(
         platformSigners: Set<String>,
         romAppSigners: Set<String>,
         romPrefixes: List<String>,
-        isOfflineOrStaleMode: Boolean
+        isOfflineOrStaleMode: Boolean,
+        cachedTargetsMap: Map<String, Int> = emptyMap(),
+        cachedSolutionsSet: Set<String> = emptySet()
     ): AppItem {
         val packageName = pkg.packageName
-        val label = localSource.getAppLabel(packageName)
-        val installer = localSource.getInstaller(packageName)
         val icon = pkg.applicationInfo?.icon
 
         // Use standard PackageManager flags to determine if it is a system app
@@ -247,7 +335,7 @@ class DeviceInventoryRepoImpl(
         }
 
         val isKnownSolution = try {
-            cacheRepository.isSolutionCached(packageName) || packageName in solutionsSet
+            cachedSolutionsSet.contains(packageName) || cacheRepository.isSolutionCached(packageName) || packageName in solutionsSet
         } catch (_: Exception) {
             false
         }
@@ -264,8 +352,20 @@ class DeviceInventoryRepoImpl(
             )
         }
 
+        if (InstallerHeuristics.isFossInstaller(installer)) {
+            return createAppItem(
+                packageName,
+                label,
+                AppStatus.FOSS,
+                installer,
+                icon,
+                isUserReclassified = false,
+                isSystemPackage = isSystem
+            )
+        }
+
         val isProprietary = try {
-            cacheRepository.isTargetCached(packageName) || (proprietaryMap[packageName] == true)
+            cachedTargetsMap.containsKey(packageName) || cacheRepository.isTargetCached(packageName) || (proprietaryMap[packageName] == true)
         } catch (_: Exception) {
             false
         }
@@ -275,18 +375,6 @@ class DeviceInventoryRepoImpl(
                 packageName,
                 label,
                 AppStatus.PROP,
-                installer,
-                icon,
-                isUserReclassified = false,
-                isSystemPackage = isSystem
-            )
-        }
-
-        if (InstallerHeuristics.isFossInstaller(installer)) {
-            return createAppItem(
-                packageName,
-                label,
-                AppStatus.FOSS,
                 installer,
                 icon,
                 isUserReclassified = false,
@@ -337,12 +425,12 @@ class DeviceInventoryRepoImpl(
         installer: String?,
         icon: Int?,
         isUserReclassified: Boolean = false,
-        isSystemPackage: Boolean = false
+        isSystemPackage: Boolean = false,
+        cachedTargetsMap: Map<String, Int> = emptyMap()
     ): AppItem {
         val alternativesCount = if (status == AppStatus.PROP) {
-            try {
-                cacheRepository.getAlternativesCount(packageName)
-                    ?: appRepository.getAlternativesCount(packageName)
+            cachedTargetsMap[packageName] ?: try {
+                cacheRepository.getAlternativesCount(packageName) ?: 0
             } catch (_: Exception) {
                 0
             }

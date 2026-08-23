@@ -1,0 +1,11 @@
+- Display admin responses and rejection reasons on report and submission screens
+- Account deletion now preserves submission history
+- Add info dialog on the Community Submissions
+- Community Submissions now loads 50 items at a time
+- Improve linking submission card display
+- Minor release improvements
+- Fix Sign In screen flashes when tapping Community before user profile finishes loading
+- Significantly improve app startup time
+- Fix FOSS apps wrongly classified as proprietary or unknown
+- Improve installer and store detection on Android 11+
+- Fix remote solutions cache truncation

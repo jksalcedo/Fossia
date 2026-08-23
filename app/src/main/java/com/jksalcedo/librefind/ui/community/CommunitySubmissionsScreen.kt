@@ -1,37 +1,47 @@
 package com.jksalcedo.librefind.ui.community
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ThumbDown
-import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material.icons.outlined.ThumbDown
-import androidx.compose.material.icons.outlined.ThumbUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,16 +52,25 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,6 +79,7 @@ import com.jksalcedo.librefind.domain.model.SigningKeyVote
 import com.jksalcedo.librefind.domain.model.Submission
 import com.jksalcedo.librefind.domain.model.SubmissionType
 import com.jksalcedo.librefind.ui.common.FullScreenLoading
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,6 +151,7 @@ fun CommunitySubmissionsScreen(
     var submissionToReject by remember { mutableStateOf<Submission?>(null) }
     var rejectionReason by remember { mutableStateOf("") }
     var submissionToDownvote by remember { mutableStateOf<Submission?>(null) }
+    var showInfoDialog by remember { mutableStateOf(false) }
 
     if (submissionToReject != null) {
         Dialog(onDismissRequest = { submissionToReject = null }) {
@@ -195,10 +216,19 @@ fun CommunitySubmissionsScreen(
         )
     }
 
+    if (showInfoDialog) {
+        CommunityInfoDialog(onDismiss = { showInfoDialog = false })
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.community_submissions_title)) },
+                title = {
+                    Text(
+                        stringResource(R.string.community_submissions_title),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -261,6 +291,14 @@ fun CommunitySubmissionsScreen(
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
+
+                    IconButton(onClick = { showInfoDialog = true }) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = stringResource(R.string.community_info_button),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             )
         },
@@ -293,6 +331,12 @@ fun CommunitySubmissionsScreen(
             }
         }
     ) { innerPadding ->
+        val listState = rememberLazyListState()
+        val coroutineScope = rememberCoroutineScope()
+        val showScrollToTop by remember {
+            derivedStateOf { listState.firstVisibleItemIndex > 5 }
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -317,8 +361,24 @@ fun CommunitySubmissionsScreen(
                         onRefresh = { viewModel.loadSubmissions(forceRefresh = true) },
                         modifier = Modifier.fillMaxSize()
                     ) {
+                        val shouldLoadMore by remember {
+                            derivedStateOf {
+                                val info = listState.layoutInfo
+                                val total = info.totalItemsCount
+                                val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: 0
+                                total > 0 && lastVisible >= total - 5
+                            }
+                        }
+
+                        LaunchedEffect(shouldLoadMore) {
+                            if (shouldLoadMore) viewModel.loadNextPage()
+                        }
+
                         LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
+                            state = listState,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScrollbar(listState),
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(
                                 start = 16.dp,
                                 top = 8.dp,
@@ -381,7 +441,9 @@ fun CommunitySubmissionsScreen(
                                         }
                                     }
                                 } else {
-                                    items(filteredKeyVotes) { vote ->
+                                    items(
+                                        filteredKeyVotes,
+                                        key = { it.sha256Digest + it.packageName }) { vote ->
                                         KeyVoteItem(
                                             vote = vote,
                                             onClick = {
@@ -413,7 +475,7 @@ fun CommunitySubmissionsScreen(
                                         }
                                     }
                                 } else {
-                                    items(filteredSubmissions) { submission ->
+                                    items(filteredSubmissions, key = { it.id }) { submission ->
                                         CommunitySubmissionItem(
                                             submission = submission,
                                             onClick = { onSubmissionClick(submission.id) },
@@ -422,124 +484,49 @@ fun CommunitySubmissionsScreen(
                                             onDownvote = { submissionToDownvote = submission }
                                         )
                                     }
+                                    if (state.isLoadingMore) {
+                                        item {
+                                            Box(
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(16.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(
+                                                        24.dp
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-    }
-}
 
-@Composable
-fun CommunitySubmissionItem(
-    submission: Submission,
-    onClick: () -> Unit,
-    onUserClick: () -> Unit = {},
-    onUpvote: () -> Unit,
-    onDownvote: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+            AnimatedVisibility(
+                visible = showScrollToTop,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                enter = fadeIn() + slideInVertically { it },
+                exit = fadeOut() + slideOutVertically { it }
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = submission.submittedApp.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.clickable { onUserClick() }
-                    ) {
-                        Text(
-                            text = submission.submitterUsername,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (!submission.submitterBadge.isNullOrBlank()) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                shape = MaterialTheme.shapes.extraSmall
-                            ) {
-                                Text(
-                                    text = submission.submitterBadge,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontSize = MaterialTheme.typography.labelSmall.fontSize * 0.8f,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                            }
+                FloatingActionButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(0)
                         }
-                        Text(
-                            text = "(${submission.submitterReputation})",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = submission.type.name.replace("_", " "),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ) {
-                    IconButton(onClick = onUpvote, modifier = Modifier.size(36.dp)) {
-                        Icon(
-                            imageVector = if (submission.userVote == 1) Icons.Filled.ThumbUp
-                            else Icons.Outlined.ThumbUp,
-                            contentDescription = stringResource(R.string.submission_upvote),
-                            tint = if (submission.userVote == 1) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Text(
-                        text = "${submission.upvotes}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    IconButton(onClick = onDownvote, modifier = Modifier.size(36.dp)) {
-                        Icon(
-                            imageVector = if (submission.userVote == -1) Icons.Filled.ThumbDown
-                            else Icons.Outlined.ThumbDown,
-                            contentDescription = stringResource(R.string.submission_downvote),
-                            tint = if (submission.userVote == -1) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Text(
-                        text = "${submission.downvotes}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Icon(
+                        Icons.Default.KeyboardArrowUp,
+                        contentDescription = stringResource(R.string.back)
                     )
                 }
             }
@@ -626,6 +613,127 @@ fun KeyVoteItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun CommunityInfoDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Default.Info,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        title = {
+            Text(
+                text = stringResource(R.string.community_info_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.community_info_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                HorizontalDivider()
+
+                Text(
+                    text = stringResource(R.string.community_info_rules_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                val rules = stringArrayResource(R.array.community_submission_rules)
+                rules.forEach { rule ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = rule,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                HorizontalDivider()
+
+                Text(
+                    text = stringResource(R.string.community_info_voting_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Text(
+                    text = stringResource(R.string.community_info_voting_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.ok))
+            }
+        }
+    )
+}
+
+private fun Modifier.verticalScrollbar(
+    state: androidx.compose.foundation.lazy.LazyListState,
+    width: Dp = 4.dp
+): Modifier = composed {
+    val color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+    val targetAlpha = if (state.isScrollInProgress) 1f else 0f
+    val duration = if (state.isScrollInProgress) 150 else 1000
+    val alpha by animateFloatAsState(
+        targetValue = targetAlpha,
+        animationSpec = tween(durationMillis = duration),
+        label = "scrollbar"
+    )
+
+    drawWithContent {
+        drawContent()
+
+        val layoutInfo = state.layoutInfo
+        val viewportSize = layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset
+        val totalItemsCount = layoutInfo.totalItemsCount
+        val visibleItemsCount = layoutInfo.visibleItemsInfo.size
+
+        if (totalItemsCount > visibleItemsCount && alpha > 0f) {
+            val scrollbarHeight = (visibleItemsCount.toFloat() / totalItemsCount * viewportSize)
+                .coerceAtLeast(24.dp.toPx())
+
+            val avgItemSize = viewportSize.toFloat() / visibleItemsCount
+            val currentOffset = state.firstVisibleItemIndex * avgItemSize +
+                    state.firstVisibleItemScrollOffset
+            val estimatedTotalHeight = avgItemSize * totalItemsCount
+            val scrollRatio = currentOffset / (estimatedTotalHeight - viewportSize)
+                .coerceAtLeast(1f)
+            val scrollbarY = scrollRatio * (viewportSize - scrollbarHeight)
+
+            drawRoundRect(
+                color = color,
+                topLeft = Offset(size.width - width.toPx(), scrollbarY.coerceAtLeast(0f)),
+                size = Size(width.toPx(), scrollbarHeight),
+                cornerRadius = CornerRadius(width.toPx() / 2),
+                alpha = alpha
+            )
         }
     }
 }

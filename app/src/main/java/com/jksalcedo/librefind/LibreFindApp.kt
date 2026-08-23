@@ -6,6 +6,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.jksalcedo.librefind.data.local.PreferencesManager
 import com.jksalcedo.librefind.di.appModule
 import com.jksalcedo.librefind.di.networkModule
 import com.jksalcedo.librefind.di.repositoryModule
@@ -14,14 +15,29 @@ import com.jksalcedo.librefind.di.useCaseModule
 import com.jksalcedo.librefind.di.viewModelModule
 import com.jksalcedo.librefind.worker.NotificationWorker
 import com.jksalcedo.librefind.worker.SignerFeedWorker
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import java.util.concurrent.TimeUnit
 
 class LibreFindApp : Application() {
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
+
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        val preferencesManager = PreferencesManager(this)
+        Thread.setDefaultUncaughtExceptionHandler(
+            com.jksalcedo.librefind.utils.LibreFindCrashHandler(
+                context = this,
+                preferencesManager = preferencesManager,
+                defaultHandler = defaultHandler
+            )
+        )
 
         startKoin {
             androidLogger()
@@ -36,21 +52,24 @@ class LibreFindApp : Application() {
             )
         }
 
-        val prefs = com.jksalcedo.librefind.data.local.PreferencesManager(this)
-        
-        if (prefs.getNetworkConsentGranted()) {
-            scheduleSignerFeedUpdate()
-            scheduleNotificationWorker()
-            
-            if (prefs.getAutoUpdateEnabled()) {
-                scheduleAutoUpdateWorker()
+        // Schedule background workers off the main thread — WorkManager.getInstance()
+        // initialises its internal Room database on first call which blocks the main thread.
+        GlobalScope.launch(Dispatchers.IO) {
+            val prefs = com.jksalcedo.librefind.data.local.PreferencesManager(this@LibreFindApp)
+            if (prefs.getNetworkConsentGranted()) {
+                scheduleSignerFeedUpdate()
+                scheduleNotificationWorker()
+
+                if (prefs.getAutoUpdateEnabled()) {
+                    scheduleAutoUpdateWorker()
+                } else {
+                    WorkManager.getInstance(this@LibreFindApp).cancelUniqueWork("app_update_check")
+                }
             } else {
-                WorkManager.getInstance(this).cancelUniqueWork("app_update_check")
+                WorkManager.getInstance(this@LibreFindApp).cancelUniqueWork("signer_feed_update")
+                WorkManager.getInstance(this@LibreFindApp).cancelUniqueWork("notification_check")
+                WorkManager.getInstance(this@LibreFindApp).cancelUniqueWork("app_update_check")
             }
-        } else {
-            WorkManager.getInstance(this).cancelUniqueWork("signer_feed_update")
-            WorkManager.getInstance(this).cancelUniqueWork("notification_check")
-            WorkManager.getInstance(this).cancelUniqueWork("app_update_check")
         }
     }
 

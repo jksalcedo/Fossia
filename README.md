@@ -117,24 +117,17 @@ at [librefind-submission.web.app](https://librefind-submission.web.app/).
 Connect with fellow open-source advocates, discuss alternative apps, and help shape the project
 roadmap:
 
+* [Matrix Room](https://matrix.to/#/#librefind-community:matrix.org)
 * [Reddit Subreddit](https://www.reddit.com/r/LibreFind)
-* [Telegram Channel](https://t.me/librefind)
+* [Telegram Group](https://t.me/librefind)
 
 ---
 
 ## ☕ Support
 
-LibreFind is a free and open-source project managed independently. Our goal is to promote digital
-privacy by making FOSS apps mainstream. Currently, LibreFind is trusted by **1,735 registered users
-** globally.
+LibreFind is a free, independently managed open-source project.
 
-While the app is free, **infrastructure and hosting servers** cost money to keep running 24/7. If
-you find this tool useful for reclaiming your digital privacy, please consider supporting the
-project. Your contributions go directly toward:
-
-* Paying monthly server bills.
-* Keeping the database fast, responsive, and online.
-* Development of heavy features (like offline sync architecture).
+If you find this tool useful, consider supporting the project to help cover server costs and fund new features!
 
 <div align="center">
   <a href="https://ko-fi.com/jksalcedo">
@@ -146,34 +139,37 @@ project. Your contributions go directly toward:
 
 ## Contributing
 
-Can't donate? You can still make a massive difference to the project's health:
+You can make a massive difference to the project's health by:
 
-* **Star the repo** — Helps others discover LibreFind across GitHub.
-* **Report bugs** — Open an issue if a scanner module or specific sync crashes.
-* **Suggest features** — Share architectural ideas through our issue tracker.
-* **Translate** — Bring digital sovereignty to more regions
-  via [Weblate](https://hosted.weblate.org/engage/librefind/)
-  or [Crowdin](https://crowdin.com/project/librefind).
-* **Contribute code** — Fix bugs or help build our client features via Pull Requests.
+* **Starring the repo**
+* **Reporting bugs & suggesting features** via our issue tracker
+* **Translating** via [Weblate](https://hosted.weblate.org/engage/librefind/)
+* **Contributing code** via Pull Requests
 
 Every single contribution counts.
+
+> [!TIP]
+> If possible, we kindly encourage opening issues and pull requests on our [Codeberg repository](https://codeberg.org/jksalcedo/librefind).
 
 ---
 
 ## 🌍 Translations
 
-[![Crowdin](https://badges.crowdin.net/librefind/localized.svg)](https://crowdin.com/project/librefind)
+[![Weblate](https://hosted.weblate.org/widgets/librefind/-/svg-badge.svg)](https://hosted.weblate.org/engage/librefind/)
 
 LibreFind is a global project. If your native language isn't represented, head to
-our [Crowdin Project Page](https://crowdin.com/project/librefind), choose your language, and help
+[Weblate](https://hosted.weblate.org/engage/librefind/), choose your language, and help
 make alternative discovery accessible to everyone.
+
+> [!WARNING]
+> Please do not make translations or edits on Crowdin. We use [Weblate](https://hosted.weblate.org/engage/librefind/) exclusively, and any changes submitted to Crowdin will not be merged.
 
 ---
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=jksalcedo/librefind&type=date&legend=top-left&theme=dark)](https://www.star-history.com/#jksalcedo/librefind&type=date&legend=top-left&theme=dark)
+[![Star History Chart](https://star-history.dera.page/svg?repos=jksalcedo/librefind&type=date&legend=top-left&theme=dark)](https://star-history.dera.page/#jksalcedo/librefind&type=date&legend=top-left&theme=dark)
 
 ## License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **GNU General Public License, version 3** - see the [LICENSE](LICENSE) file for details.

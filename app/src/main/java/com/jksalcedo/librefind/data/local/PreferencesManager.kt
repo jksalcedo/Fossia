@@ -166,6 +166,34 @@ class PreferencesManager(private val context: Context) {
 
 
 
+    fun getLogsLocation(): String? {
+        return prefs.getString(KEY_LOGS_LOCATION, null) ?: prefs.getString(KEY_CRASH_LOGS_LOCATION, null)
+    }
+
+    fun setLogsLocation(uri: String?) {
+        prefs.edit()
+            .putString(KEY_LOGS_LOCATION, uri)
+            .putString(KEY_CRASH_LOGS_LOCATION, uri)
+            .apply()
+    }
+
+    fun observeLogsLocation(): Flow<String?> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == KEY_LOGS_LOCATION || key == KEY_CRASH_LOGS_LOCATION) {
+                trySend(getLogsLocation())
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        trySend(getLogsLocation())
+        awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+
+    fun getCrashLogsLocation(): String? = getLogsLocation()
+
+    fun setCrashLogsLocation(uri: String?) = setLogsLocation(uri)
+
+    fun observeCrashLogsLocation(): Flow<String?> = observeLogsLocation()
+
     companion object {
         private const val KEY_ONBOARDING_COMPLETE = "onboarding_complete"
         private const val KEY_LAST_VERSION = "last_seen_version"
@@ -182,5 +210,9 @@ class PreferencesManager(private val context: Context) {
         private const val KEY_HAS_ASKED_NETWORK_CONSENT = "has_asked_network_consent"
         private const val KEY_NETWORK_CONSENT_GRANTED = "network_consent_granted"
         private const val KEY_AUTO_UPDATE_ENABLED = "auto_update_enabled"
+
+        // Logs location
+        private const val KEY_LOGS_LOCATION = "logs_location"
+        private const val KEY_CRASH_LOGS_LOCATION = "crash_logs_location"
     }
 }
