@@ -266,7 +266,6 @@
     <string name="settings_include_prereleases_desc">Receive updates for alpha, beta, and RC versions.</string>
     <string name="settings_include_prereleases_label">Include pre-releases</string>
     <string name="settings_include_prereleases_title">Experimental Updates</string>
-    <string name="settings_join_community">Liitu kogukonnaga</string>
     <string name="settings_language">Keel</string>
     <string name="settings_language_arabic">Araabia</string>
     <string name="settings_language_chinese_simplified">Lihtsustatud Hiina</string>
