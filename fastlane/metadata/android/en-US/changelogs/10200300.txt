@@ -1,4 +1,0 @@
-- In-app logs and diagnostic reports export with custom storage location
-- Fix FOSS apps wrongly classified as proprietary or unknown
-- Improve installer and store detection on Android 11+
-- Fix remote solutions cache truncation

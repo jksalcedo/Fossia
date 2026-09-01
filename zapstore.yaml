@@ -18,9 +18,9 @@ description: |
 
   The app only queries the database for FOSS alternatives when proprietary apps are detected.
 
-  LibreFind is fully open source under the MIT License. Contribute at: https://github.com/jksalcedo/librefind
+  LibreFind is fully open source under the GPL-3.0-or-later license. Contribute at: https://github.com/jksalcedo/librefind
 
-license: MIT
+license: GPL-3.0-or-later
 repository: https://github.com/jksalcedo/librefind
 pubkey: npub1v4dfske62puuyhxzs8s83p9xhzlqlwq0h998map93jjlylp6p6wscd3z4t
 tags:
