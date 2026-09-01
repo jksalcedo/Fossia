@@ -117,7 +117,7 @@ at [librefind-submission.web.app](https://librefind-submission.web.app/).
 Connect with fellow open-source advocates, discuss alternative apps, and help shape the project
 roadmap:
 
-* [Matrix Room](https://matrix.to/#/#librefind-community:matrix.org)
+* [Matrix Room](https://matrix.to/#/#librefind:matrix.org)
 * [Reddit Subreddit](https://www.reddit.com/r/LibreFind)
 * [Telegram Group](https://t.me/librefind)
 
@@ -127,7 +127,8 @@ roadmap:
 
 LibreFind is a free, independently managed open-source project.
 
-If you find this tool useful, consider supporting the project to help cover server costs and fund new features!
+If you find this tool useful, consider supporting the project to help cover server costs and fund
+new features!
 
 <div align="center">
   <a href="https://ko-fi.com/jksalcedo">
@@ -149,7 +150,8 @@ You can make a massive difference to the project's health by:
 Every single contribution counts.
 
 > [!TIP]
-> If possible, we kindly encourage opening issues and pull requests on our [Codeberg repository](https://codeberg.org/jksalcedo/librefind).
+> If possible, we kindly encourage opening issues and pull requests on
+> our [Codeberg repository](https://codeberg.org/jksalcedo/librefind).
 
 ---
 
@@ -162,7 +164,9 @@ LibreFind is a global project. If your native language isn't represented, head t
 make alternative discovery accessible to everyone.
 
 > [!WARNING]
-> Please do not make translations or edits on Crowdin. We use [Weblate](https://hosted.weblate.org/engage/librefind/) exclusively, and any changes submitted to Crowdin will not be merged.
+> Please do not make translations or edits on Crowdin. We
+> use [Weblate](https://hosted.weblate.org/engage/librefind/) exclusively, and any changes submitted
+> to Crowdin will not be merged.
 
 ---
 
@@ -172,4 +176,4 @@ make alternative discovery accessible to everyone.
 
 ## License
 
-This project is licensed under the **GNU General Public License, version 3** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **GNU General Public License v3.0 or later (GPL-3.0-or-later)** - see the [LICENSE](LICENSE) file for details.
