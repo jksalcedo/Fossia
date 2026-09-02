@@ -29,7 +29,7 @@ class SupabaseAuthRepository(
     override val currentUser: Flow<UserProfile?> = auth.sessionStatus.transformLatest { status ->
         if (status is SessionStatus.Authenticated) {
             status.session.user?.let { user ->
-                val fallbackUsername = extractUsernameFromMetadata(user)
+                val fallbackUsername = extractUsernameFromMetadata(user).ifBlank { "Guest" }
                 emit(
                     UserProfile(
                         uid = user.id,
@@ -119,6 +119,10 @@ class SupabaseAuthRepository(
         auth.signInWith(Github, redirectUrl = "librefind://login-callback")
     }
 
+    override suspend fun signInAnonymously(): Result<Unit> = runCatching {
+        auth.signInAnonymously()
+    }
+
     override suspend fun signOut() {
         auth.signOut()
     }
@@ -133,10 +137,8 @@ class SupabaseAuthRepository(
         val profile = fetchUserProfile(user.id)
 
         if (profile != null && profile.username.isBlank()) {
-            val fallback = extractUsernameFromMetadata(user)
-            if (fallback.isNotBlank()) {
-                return profile.copy(username = fallback)
-            }
+            val fallback = extractUsernameFromMetadata(user).ifBlank { "Guest" }
+            return profile.copy(username = fallback)
         }
         return profile
     }
@@ -219,7 +221,7 @@ class SupabaseAuthRepository(
     private suspend fun ensureProfileCreated(user: UserInfo) {
         try {
             val userId = user.id
-            val username = extractUsernameFromMetadata(user)
+            val username = extractUsernameFromMetadata(user).ifBlank { "Guest" }
 
             val existing = supabase.postgrest.from("profiles")
                 .select { filter { eq("id", userId) } }

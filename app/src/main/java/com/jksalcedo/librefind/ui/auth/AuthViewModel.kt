@@ -128,6 +128,29 @@ class AuthViewModel(
         }
     }
 
+    fun signInAnonymously() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            authRepository.signInAnonymously()
+                .onSuccess {
+                    val currentUser = authRepository.getCurrentUser()
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isSignedIn = true,
+                        needsProfileSetup = false,
+                        profileComplete = true,
+                        userProfile = currentUser
+                    )
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = sanitizeAuthError(e.message)
+                    )
+                }
+        }
+    }
+
     fun saveProfile(username: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)

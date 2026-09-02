@@ -173,6 +173,22 @@ fun AuthScreen(
                 Text(stringResource(R.string.auth_sign_in_github))
             }
 
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = { viewModel.signInAnonymously() },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoading
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_profile),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.auth_continue_as_guest))
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             TextButton(onClick = { isSignUp = !isSignUp }) {

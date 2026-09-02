@@ -1,0 +1,1 @@
+- Allow submitting app feedback, corrections, and alternatives without an account

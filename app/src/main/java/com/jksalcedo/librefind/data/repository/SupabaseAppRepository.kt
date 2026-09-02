@@ -447,6 +447,16 @@ class SupabaseAppRepository(
         }
     }
 
+    private suspend fun ensureAuthenticatedUser(): String {
+        val existingUser = supabase.auth.currentUserOrNull()
+        if (existingUser != null) {
+            return existingUser.id
+        }
+        supabase.auth.signInAnonymously()
+        return supabase.auth.currentUserOrNull()?.id
+            ?: throw IllegalStateException("Failed to authenticate session")
+    }
+
     override suspend fun submitAlternative(
         proprietaryPackage: String,
         alternativePackage: String,
@@ -467,6 +477,8 @@ class SupabaseAppRepository(
                 return@runCatching
             }
 
+            val submitterId = if (userId.isNotBlank()) userId else ensureAuthenticatedUser()
+
             val submission = UserSubmissionDto(
                 appName = appName,
                 appPackage = alternativePackage,
@@ -477,7 +489,7 @@ class SupabaseAppRepository(
                 license = license.ifBlank { null },
                 alternatives = alternatives.ifEmpty { null },
                 submissionType = submissionType.name,
-                submitterId = userId,
+                submitterId = submitterId,
                 category = category.ifBlank { null }
             )
             supabase.postgrest.from("user_submissions").insert(submission)
@@ -510,10 +522,12 @@ class SupabaseAppRepository(
                 return@runCatching
             }
 
+            val actualSubmitterId = if (submitterId.isNotBlank()) submitterId else ensureAuthenticatedUser()
+
             val submission = UserLinkingSubmissionsDto(
                 proprietaryPackage = proprietaryPackage,
                 alternatives = alternatives,
-                submitterId = submitterId,
+                submitterId = actualSubmitterId,
                 status = "PENDING",
                 rejectionReason = null
             )
@@ -715,8 +729,7 @@ class SupabaseAppRepository(
         type: String,
         text: String
     ): Result<Unit> = runCatching {
-        val userId =
-            supabase.auth.currentUserOrNull()?.id ?: throw IllegalStateException("Not logged in")
+        val userId = ensureAuthenticatedUser()
 
         val feedback = AppFeedbackDto(
             packageName = packageName,
@@ -1308,12 +1321,13 @@ class SupabaseAppRepository(
         priority: String,
         userId: String
     ): Result<Unit> = runCatching {
+        val submitterId = if (userId.isNotBlank()) userId else ensureAuthenticatedUser()
         val report = UserReportDto(
             title = title,
             description = description,
             reportType = type,
             priority = priority,
-            submitterId = userId
+            submitterId = submitterId
         )
         supabase.postgrest.from("user_reports").insert(report)
     }
@@ -1465,11 +1479,10 @@ class SupabaseAppRepository(
         issueType: String,
         description: String
     ): Result<Unit> = runCatching {
-        val currentUser = supabase.auth.currentUserOrNull()
-            ?: throw IllegalStateException("Not logged in")
+        val userId = ensureAuthenticatedUser()
 
         val report = AppReport(
-            userId = currentUser.id,
+            userId = userId,
             packageName = packageName,
             issueType = issueType,
             description = description
@@ -1484,11 +1497,10 @@ class SupabaseAppRepository(
         correctionValue: String,
         description: String
     ): Result<Unit> = runCatching {
-        val currentUser = supabase.auth.currentUserOrNull()
-            ?: throw IllegalStateException("Not logged in")
+        val userId = ensureAuthenticatedUser()
 
         val correction = AppCorrectionDto(
-            userId = currentUser.id,
+            userId = userId,
             packageName = packageName,
             correctionType = correctionType,
             correctionValue = correctionValue,

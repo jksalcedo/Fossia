@@ -74,6 +74,7 @@
     <string name="auth_show_password">Show password</string>
     <string name="auth_or">OR</string>
     <string name="auth_sign_in_github">Sign in with GitHub</string>
+    <string name="auth_continue_as_guest">Continue as Guest</string>
     <string name="auth_already_have_account">Already have an account? Sign In</string>
     <string name="auth_dont_have_account">Don\'t have an account? Sign Up</string>
     <string name="auth_check_email_title">Check Your Email</string>
