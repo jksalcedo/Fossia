@@ -240,16 +240,14 @@ fun AlternativeDetailScreen(
                                     leadingIcon = { Icon(Icons.Default.ContentCopy, null) }
                                 )
                                 HorizontalDivider()
-                                if (state.isSignedIn) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.alt_detail_report)) },
-                                        onClick = {
-                                            menuExpanded = false
-                                            showReportDialog = true
-                                        },
-                                        leadingIcon = { Icon(Icons.Default.Flag, null) }
-                                    )
-                                }
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.alt_detail_report)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showReportDialog = true
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Flag, null) }
+                                )
                             }
                         }
                     }
@@ -488,15 +486,13 @@ fun AlternativeDetailScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.secondary
                             )
-                            if (state.isSignedIn) {
-                                IconButton(onClick = {
-                                    feedbackType = 0; showFeedbackDialog = true
-                                }) {
-                                    Icon(
-                                        Icons.Default.Add,
-                                        stringResource(R.string.alt_detail_add_pro_desc)
-                                    )
-                                }
+                            IconButton(onClick = {
+                                feedbackType = 0; showFeedbackDialog = true
+                            }) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    stringResource(R.string.alt_detail_add_pro_desc)
+                                )
                             }
                         }
                         if (alt.pros.isEmpty()) {
@@ -528,15 +524,13 @@ fun AlternativeDetailScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.error
                             )
-                            if (state.isSignedIn) {
-                                IconButton(onClick = {
-                                    feedbackType = 1; showFeedbackDialog = true
-                                }) {
-                                    Icon(
-                                        Icons.Default.Add,
-                                        stringResource(R.string.alt_detail_add_con_desc)
-                                    )
-                                }
+                            IconButton(onClick = {
+                                feedbackType = 1; showFeedbackDialog = true
+                            }) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    stringResource(R.string.alt_detail_add_con_desc)
+                                )
                             }
                         }
                         if (alt.cons.isEmpty()) {

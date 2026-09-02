@@ -56,18 +56,19 @@ class ReportViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
-            val user = authRepository.getCurrentUser()
+            var user = authRepository.getCurrentUser()
             if (user == null) {
-                _uiState.update { it.copy(isLoading = false, error = "You must be logged in to submit a report") }
-                return@launch
+                authRepository.signInAnonymously()
+                user = authRepository.getCurrentUser()
             }
+            val userId = user?.uid ?: ""
 
             repository.submitReport(
                 title = state.title,
                 description = state.description,
                 type = state.selectedType.name,
                 priority = state.selectedPriority.name,
-                userId = user.uid
+                userId = userId
             ).onSuccess {
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             }.onFailure { e ->

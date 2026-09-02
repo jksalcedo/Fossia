@@ -137,20 +137,12 @@ fun NavGraph(
                     navController.navigate(Route.Submit.createRoute(name, pkg, "proprietary"))
                 },
                 onAddAlternativeClick = { _, pkg ->
-                    if (authState.isSignedIn) {
-                        navController.navigate(
-                            Route.Submit.createRoute(type = "link", proprietaryTarget = pkg)
-                        )
-                    } else {
-                        navController.navigate(Route.Auth.route)
-                    }
+                    navController.navigate(
+                        Route.Submit.createRoute(type = "link", proprietaryTarget = pkg)
+                    )
                 },
                 onSuggestCorrection = { pkg ->
-                    if (authState.isSignedIn) {
-                        navController.navigate(Route.SuggestCorrection.createRoute(pkg))
-                    } else {
-                        navController.navigate(Route.Auth.route)
-                    }
+                    navController.navigate(Route.SuggestCorrection.createRoute(pkg))
                 },
                 onSubmitSigningKey = { name, pkg ->
                     if (authState.isSignedIn) {
@@ -277,11 +269,7 @@ fun NavGraph(
             com.jksalcedo.librefind.ui.settings.SettingsScreen(
                 onBackClick = { navController.navigateUp() },
                 onReportClick = {
-                    if (authState.isSignedIn) {
-                        navController.navigate(Route.Report.route)
-                    } else {
-                        navController.navigate(Route.Auth.route)
-                    }
+                    navController.navigate(Route.Report.route)
                 },
                 onMyReportsClick = {
                     if (authState.isSignedIn) {

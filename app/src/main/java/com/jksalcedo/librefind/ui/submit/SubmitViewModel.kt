@@ -158,21 +158,19 @@ class SubmitViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
-            val user = authRepository.getCurrentUser()
+            var user = authRepository.getCurrentUser()
             if (user == null) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = "Not signed in")
+                authRepository.signInAnonymously()
+                user = authRepository.getCurrentUser()
+            }
+            if (user == null) {
+                _uiState.value = _uiState.value.copy(isLoading = false, error = "Failed to authenticate session")
                 return@launch
             }
 
             if (_uiState.value.packageNameError != null || _uiState.value.repoUrlError != null) {
                 _uiState.value =
                     _uiState.value.copy(isLoading = false, error = "Please fix validation errors")
-                return@launch
-            }
-
-            if (user.username.isBlank()) {
-                _uiState.value =
-                    _uiState.value.copy(isLoading = false, error = "Profile not set up")
                 return@launch
             }
 
