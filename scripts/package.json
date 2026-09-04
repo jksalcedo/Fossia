@@ -1,0 +1,10 @@
+{
+  "name": "librefind-sync",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@streamparser/json": "^0.0.21",
+    "@supabase/supabase-js": "^2.0.0"
+  }
+}
