@@ -133,6 +133,8 @@ interface AppRepository {
 
     suspend fun getPendingSubmissionPackages(): Set<String>
 
+    suspend fun getSubmissionById(id: String): Submission?
+
     suspend fun approveSubmission(id: String, type: SubmissionType): Result<Unit>
     suspend fun rejectSubmission(id: String, type: SubmissionType, reason: String): Result<Unit>
 

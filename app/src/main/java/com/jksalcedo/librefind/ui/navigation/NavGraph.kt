@@ -150,6 +150,9 @@ fun NavGraph(
                     } else {
                         navController.navigate(Route.Auth.route)
                     }
+                },
+                onViewPendingSubmission = { submissionId ->
+                    navController.navigate(Route.SubmissionDetail.createRoute(submissionId))
                 }
             )
         }

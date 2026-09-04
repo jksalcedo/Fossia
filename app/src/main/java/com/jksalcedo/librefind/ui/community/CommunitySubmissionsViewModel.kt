@@ -1,5 +1,6 @@
 package com.jksalcedo.librefind.ui.community
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jksalcedo.librefind.domain.model.SigningKeyVote
@@ -23,6 +24,7 @@ enum class SortOption {
 
 data class CommunitySubmissionsState(
     val submissions: List<Submission> = emptyList(),
+    val selectedSubmission: Submission? = null,
     val signingKeyVotes: List<SigningKeyVote> = emptyList(),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
@@ -32,6 +34,7 @@ data class CommunitySubmissionsState(
     val searchQuery: String = "",
     val filterType: SubmissionType? = null,
     val isKeyVoteFilter: Boolean = false,
+    val isLoadingDetail: Boolean = false,
     val sortOption: SortOption = SortOption.NEWEST
 )
 
@@ -80,9 +83,14 @@ class CommunitySubmissionsViewModel(
                     emptyList()
                 }
                 currentPage = 1
-                _uiState.update {
-                    it.copy(
-                        submissions = enriched,
+                _uiState.update { state ->
+                    val mergedSubmissions = if (state.selectedSubmission != null && enriched.none { s -> s.id == state.selectedSubmission.id }) {
+                        enriched + state.selectedSubmission
+                    } else {
+                        enriched
+                    }
+                    state.copy(
+                        submissions = mergedSubmissions,
                         signingKeyVotes = keyVotes,
                         isLoading = false,
                         isRefreshing = false,
@@ -176,6 +184,40 @@ class CommunitySubmissionsViewModel(
         _uiState.update { it.copy(sortOption = option) }
     }
 
+    fun loadSubmissionById(id: String) {
+        val existing = _uiState.value.selectedSubmission?.takeIf { it.id == id }
+            ?: _uiState.value.submissions.find { it.id == id }
+
+        if (existing != null) {
+            _uiState.update { it.copy(selectedSubmission = existing) }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingDetail = true) }
+            try {
+                val submission = appRepository.getSubmissionById(id)
+                if (submission != null) {
+                    val enriched = enrichWithVotes(listOf(submission)).firstOrNull() ?: submission
+                    _uiState.update { state ->
+                        state.copy(
+                            selectedSubmission = enriched,
+                            submissions = if (state.submissions.any { it.id == id }) {
+                                state.submissions.map { if (it.id == id) enriched else it }
+                            } else {
+                                state.submissions + enriched
+                            }
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("CommunityVM", "Failed to load submission by ID: $id", e)
+            } finally {
+                _uiState.update { it.copy(isLoadingDetail = false) }
+            }
+        }
+    }
+
     fun approveSubmission(submission: Submission) {
         viewModelScope.launch {
             appRepository.approveSubmission(submission.id, submission.type)
@@ -205,25 +247,24 @@ class CommunitySubmissionsViewModel(
         val newVote = if (submission.userVote == vote) 0 else vote
 
         _uiState.update { state ->
+            val wasUpvoted = submission.userVote == 1
+            val wasDownvoted = submission.userVote == -1
+            val updated = submission.copy(
+                upvotes = when {
+                    newVote == 1 -> submission.upvotes + 1
+                    wasUpvoted -> submission.upvotes - 1
+                    else -> submission.upvotes
+                },
+                downvotes = when {
+                    newVote == -1 -> submission.downvotes + 1
+                    wasDownvoted -> submission.downvotes - 1
+                    else -> submission.downvotes
+                },
+                userVote = if (newVote == 0) null else newVote
+            )
             state.copy(
-                submissions = state.submissions.map { s ->
-                    if (s.id != submission.id) return@map s
-                    val wasUpvoted = s.userVote == 1
-                    val wasDownvoted = s.userVote == -1
-                    s.copy(
-                        upvotes = when {
-                            newVote == 1 -> s.upvotes + 1
-                            wasUpvoted -> s.upvotes - 1
-                            else -> s.upvotes
-                        },
-                        downvotes = when {
-                            newVote == -1 -> s.downvotes + 1
-                            wasDownvoted -> s.downvotes - 1
-                            else -> s.downvotes
-                        },
-                        userVote = if (newVote == 0) null else newVote
-                    )
-                }
+                submissions = state.submissions.map { s -> if (s.id == submission.id) updated else s },
+                selectedSubmission = if (state.selectedSubmission?.id == submission.id) updated else state.selectedSubmission
             )
         }
 

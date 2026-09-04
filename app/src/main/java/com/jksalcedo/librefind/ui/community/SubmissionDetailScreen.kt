@@ -43,6 +43,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,8 +75,15 @@ fun SubmissionDetailScreen(
     viewModel: CommunitySubmissionsViewModel = koinViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val submission = state.submissions.find { it.id == submissionId }
+    var hasLoaded by remember(submissionId) { mutableStateOf(false) }
+    val submission = state.selectedSubmission?.takeIf { it.id == submissionId }
+        ?: state.submissions.find { it.id == submissionId }
     var showDownvoteSheet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(submissionId) {
+        viewModel.loadSubmissionById(submissionId)
+        hasLoaded = true
+    }
 
     if (showDownvoteSheet && submission != null) {
         DownvoteSheet(
@@ -104,7 +112,7 @@ fun SubmissionDetailScreen(
     ) { padding ->
         if (submission == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                if (state.isLoading) {
+                if (!hasLoaded || state.isLoading || state.isLoadingDetail) {
                     LibreFindLoadingIndicator()
                 } else {
                     Text(stringResource(R.string.submission_detail_not_found))

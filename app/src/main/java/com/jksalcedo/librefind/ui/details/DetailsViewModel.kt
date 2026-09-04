@@ -3,6 +3,7 @@ package com.jksalcedo.librefind.ui.details
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jksalcedo.librefind.domain.model.Alternative
+import com.jksalcedo.librefind.domain.model.Submission
 import com.jksalcedo.librefind.domain.repository.AppRepository
 import com.jksalcedo.librefind.domain.repository.AuthRepository
 import com.jksalcedo.librefind.domain.repository.CacheRepository
@@ -30,10 +31,8 @@ class DetailsViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
 
-            // Check unknown status using lightweight cache lookups
-            launch {
-                isAppUnknown(packageName)
-            }
+            launch { isAppUnknown(packageName) }
+            launch { loadPendingSubmission(packageName) }
 
             try {
                 val isFoss = cacheRepository.isSolutionCached(packageName) ||
@@ -56,7 +55,6 @@ class DetailsViewModel(
                 } else {
                     emptyList()
                 }
-                // null = category is "Other"/unset; emptyList = category set but no peers yet
                 val fossCategoryUnset = isFoss && siblings == null
 
                 val user = authRepository.getCurrentUser()
@@ -162,6 +160,32 @@ class DetailsViewModel(
             it.copy(isUnknown = isUnknown)
         }
     }
+
+    private suspend fun loadPendingSubmission(packageName: String) {
+        try {
+            val pending = appRepository.getAllPendingSubmissions()
+            val matches = pending.filter { sub ->
+                sub.proprietaryPackages.split(",").map { it.trim() }.contains(packageName)
+            }
+            if (matches.isNotEmpty()) {
+                val voteCounts = appRepository.getSubmissionVoteCounts(
+                    matches.map { it.id },
+                    forceRefresh = true
+                )
+                val enrichedMatches = matches.map { s ->
+                    val agg = voteCounts[s.id]
+                    s.copy(
+                        upvotes = agg?.upvotes ?: s.upvotes,
+                        downvotes = agg?.downvotes ?: s.downvotes,
+                        userVote = agg?.userVote ?: s.userVote
+                    )
+                }
+                _state.update { it.copy(pendingSubmissions = enrichedMatches) }
+            } else {
+                _state.update { it.copy(pendingSubmissions = emptyList()) }
+            }
+        } catch (_: Exception) {}
+    }
 }
 
 data class DetailsState(
@@ -174,5 +198,6 @@ data class DetailsState(
     val appInfo: Alternative? = null,
     val isSignedIn: Boolean = false,
     val error: String? = null,
-    val isUnknown: Boolean = false
+    val isUnknown: Boolean = false,
+    val pendingSubmissions: List<Submission> = emptyList()
 )

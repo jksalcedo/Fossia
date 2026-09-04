@@ -333,6 +333,7 @@
     <string name="details_no_siblings">No other FOSS apps in the same category yet.</string>
     <string name="details_siblings_found_format">%1$d similar FOSS app%2$s in this category</string>
     <string name="details_foss_category_unset">This app hasn\'t been assigned a category yet. Similar apps can\'t be shown until it is.</string>
+    <string name="details_pending_chip">Pending</string>
 
     <!-- Match vote buttons -->
     <string name="vote_upvote">Good replacement (upvote)</string>

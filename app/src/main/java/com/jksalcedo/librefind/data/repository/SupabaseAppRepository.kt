@@ -1411,6 +1411,59 @@ class SupabaseAppRepository(
         }
     }
 
+    override suspend fun getSubmissionById(id: String): Submission? {
+        cachedPendingSubmissions?.find { it.id == id }?.let { return it }
+
+        if (cachedPendingSubmissions == null) {
+            try {
+                val allPending = getAllPendingSubmissions()
+                allPending.find { it.id == id }?.let { return it }
+            } catch (e: Exception) {
+                Log.e("SupabaseAppRepo", "Failed to fetch pending submissions for getSubmissionById", e)
+            }
+        }
+
+        return try {
+            val standardDtos = supabase.postgrest.from("user_submissions")
+                .select(
+                    columns = Columns.list(
+                        "id", "app_name", "app_package", "description", "proprietary_package",
+                        "repo_url", "fdroid_id", "license", "submission_type", "type", "status",
+                        "submitter_id", "rejection_reason", "created_at", "category",
+                        "last_edited_by", "last_edited_at", "contributors", "alternatives",
+                        "profile:profiles!fk_submissions_profiles(id, username, reputation_score, badge)",
+                        "editor_profile:profiles!last_edited_by(id, username, reputation_score, badge)"
+                    )
+                ) {
+                    filter { eq("id", id) }
+                    limit(1)
+                }.decodeList<UserSubmissionWithProfileDto>()
+
+            if (standardDtos.isNotEmpty()) {
+                return mapDtosToSubmissions(standardDtos, emptyList()).firstOrNull()
+            }
+
+            val linkingDtos = supabase.postgrest.from("user_linking_submissions")
+                .select(
+                    columns = Columns.list(
+                        "id", "proprietary_package", "alternatives", "status", "submitter_id",
+                        "rejection_reason", "created_at", "last_edited_by", "last_edited_at",
+                        "contributors",
+                        "profile:profiles!user_linking_submissions_submitter_id_fkey(id, username, reputation_score, badge)",
+                        "editor_profile:profiles!last_edited_by(id, username, reputation_score, badge)"
+                    )
+                ) {
+                    filter { eq("id", id) }
+                    limit(1)
+                }.decodeList<UserLinkingSubmissionWithProfileDto>()
+
+            mapDtosToSubmissions(emptyList(), linkingDtos).firstOrNull()
+        } catch (e: Exception) {
+            Log.e("SupabaseAppRepo", "getSubmissionById DB fallback failed for ID: $id", e)
+            null
+        }
+    }
+
     override suspend fun approveSubmission(id: String, type: SubmissionType): Result<Unit> =
         runCatching {
             val table =
